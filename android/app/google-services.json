@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "773384879659",
+    "project_id": "service-c64e5",
+    "storage_bucket": "service-c64e5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773384879659:android:6c1e4475e95eae3b15746e",
+        "android_client_info": {
+          "package_name": "com.amt.service"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "773384879659-ahm81hkdpe8dudngbaqfeevci1mdeosc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzOiiPpQ-417r5gXhrOnRUGxWlArOx_vY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "773384879659-ahm81hkdpe8dudngbaqfeevci1mdeosc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
