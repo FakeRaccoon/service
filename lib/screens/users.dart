@@ -7,7 +7,6 @@ class Users extends StatefulWidget {
 }
 
 class _UsersState extends State<Users> {
-
   @override
   void initState() {
     // TODO: implement initState
@@ -19,7 +18,7 @@ class _UsersState extends State<Users> {
     SharedPreferences sharedPreferences;
     sharedPreferences = await SharedPreferences.getInstance();
     final username = sharedPreferences.getString('username');
-    if(username != null){
+    if (username != null) {
       setState(() {
         name = username;
       });
@@ -32,10 +31,24 @@ class _UsersState extends State<Users> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: Text(
+          'Akun Saya',
+          style: TextStyle(color: Colors.black),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(10),
         child: Column(
           children: [
-            Text(name ?? 'null'),
+            Row(
+              children: [
+                Icon(Icons.person),
+                SizedBox(width: 10),
+                Text(name ?? 'null'),
+              ],
+            ),
           ],
         ),
       ),

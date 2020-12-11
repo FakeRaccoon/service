@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:service/componen/menus_card.dart';
+import 'package:service/componen/menu_list_widget.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -11,8 +11,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
-  AnimationController _ColorAnimationController;
-  AnimationController _TextAnimationController;
+  AnimationController _colorAnimationController;
+  AnimationController _textAnimationController;
   Animation _colorTween, _iconColorTween, _containerTween;
   Animation<Offset> _transTween;
 
@@ -30,24 +30,25 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _ColorAnimationController = AnimationController(vsync: this, duration: Duration(seconds: 0));
+    _colorAnimationController = AnimationController(vsync: this, duration: Duration(seconds: 0));
     _colorTween =
-        ColorTween(begin: Colors.transparent, end: Colors.white).animate(_ColorAnimationController);
-    _iconColorTween =
-        ColorTween(begin: Colors.white, end: Colors.grey.withOpacity(.80)).animate(_ColorAnimationController);
+        ColorTween(begin: Colors.transparent, end: Colors.white).animate(_colorAnimationController);
+    _iconColorTween = ColorTween(begin: Colors.white, end: Colors.grey.withOpacity(.80))
+        .animate(_colorAnimationController);
 
-    _containerTween = ColorTween(begin: Colors.white, end: Colors.grey[200]).animate(_ColorAnimationController);
+    _containerTween =
+        ColorTween(begin: Colors.white, end: Colors.grey[200]).animate(_colorAnimationController);
 
-    _TextAnimationController = AnimationController(vsync: this, duration: Duration(seconds: 0));
+    _textAnimationController = AnimationController(vsync: this, duration: Duration(seconds: 0));
 
     _transTween =
-        Tween(begin: Offset(-10, 40), end: Offset(-10, 0)).animate(_TextAnimationController);
+        Tween(begin: Offset(-10, 40), end: Offset(-10, 0)).animate(_textAnimationController);
   }
 
   bool _scrollListener(ScrollNotification scrollInfo) {
     if (scrollInfo.metrics.axis == Axis.vertical) {
-      _ColorAnimationController.animateTo(scrollInfo.metrics.pixels / 160);
-      _TextAnimationController.animateTo((scrollInfo.metrics.pixels - 350) / 50);
+      _colorAnimationController.animateTo(scrollInfo.metrics.pixels / 160);
+      _textAnimationController.animateTo((scrollInfo.metrics.pixels - 350) / 50);
       changeStatusColor();
       return true;
     }
@@ -55,24 +56,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    var height = MediaQuery.of(context).size.height;
+    var width = MediaQuery.of(context).size.width;
     List<Widget> list = [
       Container(
-          height: MediaQuery.of(context).size.height / 3,
-          width: MediaQuery.of(context).size.width,
-          color: Colors.amber),
+        height: height / 3,
+        width: width,
+        color: Colors.amber,
+      ),
       Container(
-        height: MediaQuery.of(context).size.height / 3,
-        width: MediaQuery.of(context).size.width,
+        height: height / 3,
+        width: width,
         color: Colors.red,
         child: Center(
           child: Text('Red',
-              style: GoogleFonts.openSans(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+              style: GoogleFonts.openSans(
+                  color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
         ),
       ),
       Container(
-          height: MediaQuery.of(context).size.height / 3,
-          width: MediaQuery.of(context).size.width,
-          color: Colors.cyan),
+        height: height / 3,
+        width: width,
+        color: Colors.cyan,
+      ),
     ];
 
     return Scaffold(
@@ -82,6 +88,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           children: [
             SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Stack(
                     children: [
@@ -124,36 +131,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     ],
                   ),
                   SizedBox(height: 20),
-                  Container(
-                    height: 90,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        SizedBox(width: 10),
-                        MenuCard(
-                          icon: '033-money.svg',
-                          title: 'Tanda Terima Service',
-                        ),
-                        MenuCard(
-                          icon: '042-gift-card.svg',
-                          title: 'List Part & Biaya',
-                        ),
-                        MenuCard(
-                          icon: '016-gear.svg',
-                          title: 'List Part & Biaya',
-                        ),
-                        MenuCard(
-                          icon: '043-coupon.svg',
-                          title: 'List Part & Biaya',
-                        ),
-                        MenuCard(
-                          icon: '044-open.svg',
-                          title: 'List Part & Biaya',
-                        ),
-                        SizedBox(width: 10),
-                      ],
-                    ),
-                  ),
+                  MenuList(),
                   SizedBox(height: 20),
                   Container(
                     height: MediaQuery.of(context).size.height * .13,
@@ -192,13 +170,67 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
+                  SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      children: [
+                        Text('Produk buat kamu', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Spacer(),
+                        Text(
+                          'Lihat Semua',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Container(
+                    height: 200,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 200,
+                            width: 150,
+                            child: Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              color: Colors.teal,
+                              margin: EdgeInsets.only(right: 10),
+                              elevation: 4,
+                              child: Column(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(10)),
+                                    child: Container(
+                                      height: 90,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 50),
                 ],
               ),
             ),
             Container(
               height: 80,
               child: AnimatedBuilder(
-                animation: _ColorAnimationController,
+                animation: _colorAnimationController,
                 builder: (_, child) => AppBar(
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -206,15 +238,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
-                          color: _containerTween.value,
                           height: 40,
+                          color: _containerTween.value,
                           width: MediaQuery.of(context).size.width * .68,
                           child: TextFormField(
-                            textAlignVertical: TextAlignVertical.center,
+                            readOnly: true,
                             decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.search),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero),
+                              hintText: 'Cari PS5',
+                              alignLabelWithHint: true,
+                              prefixIcon: Icon(Icons.search),
+                              border: InputBorder.none,
+                            ),
                           ),
                         ),
                       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:service/home.dart';
 import 'package:service/screens/users.dart';
 
@@ -47,6 +48,12 @@ class _BodyState extends State<Body> {
   void onItemTapped(int index) {
     setState(() {
       selectedPage = index;
+      if(index == 0){
+        FlutterStatusbarcolor.setStatusBarWhiteForeground(true);
+      }
+      if(index == 1){
+        FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
+      }
     });
   }
 }
