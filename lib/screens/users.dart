@@ -35,7 +35,7 @@ class _UsersState extends State<Users> {
       body: SafeArea(
         child: Column(
           children: [
-            Text(name),
+            Text(name ?? 'null'),
           ],
         ),
       ),
