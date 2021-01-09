@@ -9,7 +9,6 @@ class MenuList extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          SizedBox(width: 10),
           MenuCard(
             icon: '033-money.svg',
             title: 'Tanda Terima Service',
@@ -30,7 +29,6 @@ class MenuList extends StatelessWidget {
             icon: '044-open.svg',
             title: 'List Part & Biaya',
           ),
-          SizedBox(width: 10),
         ],
       ),
     );

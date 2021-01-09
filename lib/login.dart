@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:crypto/crypto.dart';
 import 'package:service/body.dart';
 import 'package:service/componen/custom_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,9 +37,9 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    String md5Convert() {
-      return md5.convert(utf8.encode(passController.text)).toString();
-    }
+    // String md5Convert() {
+    //   return md5.convert(utf8.encode(passController.text)).toString();
+    // }
 
     return Scaffold(
       body: SafeArea(
@@ -97,12 +97,13 @@ class _LoginState extends State<Login> {
                     SizedBox(height: 20),
                     CustomButton(
                       title: 'Login',
-                      color: Colors.blue,
-                      ontap: () {
+                      color: Colors.amber,
+                      onTap: () {
                         if (_formKey.currentState.validate()) {
                           print(usernameController.text);
-                          print(md5Convert());
-                          loginTest(usernameController.text, md5Convert());
+                          print(passController.text);
+                          // loginTest(usernameController.text, md5Convert());
+                          loginTest(usernameController.text, passController.text);
                         }
                       },
                     ),
@@ -116,29 +117,36 @@ class _LoginState extends State<Login> {
     );
   }
 
-  loginTest(String username, String password) async {
-    String baseUrl = 'http://192.168.0.7:4948/api/login/signin';
+  getTest() async {
+    var url = "http://10.0.2.2:8000/api/user";
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      print(response.body);
+    }
+  }
 
-    var response = await http.post(baseUrl, headers: {
-      'Accept': 'application/json; charset=utf-8',
+  loginTest(String username, String password) async {
+    // String baseUrl = 'http://192.168.0.7:4948/api/login/signin';
+    String baseUrl = "http://10.0.2.2:8000/api/login";
+    var response = await http.post(baseUrl, body: {
       'username': username,
-      'password': password
+      'password': password,
     });
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      final data = decoded['token'];
-      print(data['tokenKey']);
-      print(data['userName']);
+      final data = decoded['data'];
+      print(data['token']);
+      print(data['name']);
+      print(data['role']);
       setState(() {
-        _username = data['userName'];
-        _token = data['tokenKey'];
+        _name = data['name'];
+        _token = data['token'];
+        _role = data['role'];
         setUserInfoPreference()
             .then((value) => Center(child: CircularProgressIndicator()))
             .whenComplete(() {
           setUserInfoPreference();
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (BuildContext context) => Body()),
-              (Route<dynamic> route) => false);
+          Get.offAll(Body());
         });
       });
     } else {
@@ -146,14 +154,15 @@ class _LoginState extends State<Login> {
     }
   }
 
-  String _username;
+  String _name;
   String _token;
+  String _role;
 
   Future<void> setUserInfoPreference() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    prefs.setString('username', _username);
+    prefs.setString('name', _name);
     prefs.setString('token', _token);
-    prefs.setString('role', 'Admin');
+    prefs.setString('role', _role);
   }
 }

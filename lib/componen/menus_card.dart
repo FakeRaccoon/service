@@ -10,34 +10,39 @@ class MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 80,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            child: Padding(
-              padding: const EdgeInsets.all(5),
-              child: SvgPicture.asset(
-                'assets/svg/$icon',
-                fit: BoxFit.cover,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      child: Container(
+        width: 60,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              child: Padding(
+                padding: const EdgeInsets.all(5),
+                child: SvgPicture.asset(
+                  'assets/svg/$icon',
+                  fit: BoxFit.cover,
+                ),
+              ),
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(.2),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          SizedBox(height: 5),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.openSans(fontSize: 12),
-          )
-        ],
+            SizedBox(height: 5),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.openSans(fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            )
+          ],
+        ),
       ),
     );
   }
