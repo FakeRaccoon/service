@@ -11,13 +11,14 @@ class Body extends StatefulWidget {
 
 class _BodyState extends State<Body> {
   int selectedPage = 0;
-  List<Widget> pageList = List<Widget>();
+  List<Widget> pageList = <Widget>[];
 
   @override
   void initState() {
     pageList.add(Home());
     pageList.add(Users());
     super.initState();
+    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
   }
 
   @override
@@ -40,7 +41,7 @@ class _BodyState extends State<Body> {
           ),
         ],
         currentIndex: selectedPage,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.amber,
         onTap: onItemTapped,
       ),
     );
@@ -49,12 +50,6 @@ class _BodyState extends State<Body> {
   void onItemTapped(int index) {
     setState(() {
       selectedPage = index;
-      if(index == 0){
-        FlutterStatusbarcolor.setStatusBarWhiteForeground(true);
-      }
-      if(index == 1){
-        FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-      }
     });
   }
 }

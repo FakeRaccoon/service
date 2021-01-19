@@ -6,15 +6,68 @@ import 'package:service/models/item_model.dart';
 import 'package:service/models/parts_model.dart';
 
 class API {
-  static Future getForm() async {
+  static Future getForm(status) async {
     var url = 'http://10.0.2.2:8000/api/form';
-    final response = await http.get(url, headers: {"status": "1"});
+    final response = await http.get(url, headers: {
+      "status": "$status",
+    });
     if (response.statusCode == 200) {
       var decode = json.decode(response.body);
       var parsed = json.encode(decode["data"]);
       final List form = formResultFromJson(parsed);
       print(parsed);
       return form;
+    }
+  }
+
+  static Future formCreate(customer, item) async {
+    var url = 'http://10.0.2.2:8000/api/form/create';
+    final response = await http.post(
+      url,
+      body: {
+        "customer": "$customer",
+        "item": "$item",
+        "status": "1",
+        "receipt_date": DateTime.now().toString()
+      },
+    );
+    try {
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  static Future formUpdate(id, estimatedDate, estimatedFee) async {
+    var url = 'http://10.0.2.2:8000/api/form/update/$id';
+    final response = await http.post(
+      url,
+      body: {
+        "estimated_date": "$estimatedDate",
+        "estimated_fee": "$estimatedFee",
+        "status": "2",
+      },
+    );
+    try {
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  static Future formTotal(id, total) async {
+    var url = 'http://10.0.2.2:8000/api/form/update/total/$id';
+    final response = await http.post(url, body: {"total": total});
+    try {
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } catch (e) {
+      print(e);
     }
   }
 
@@ -48,11 +101,44 @@ class API {
       'form_id': "$formId",
       'name': "$name",
       'qty': "$qty",
-      'selected': "false",
     });
     if (response.statusCode == 200) {
       print(response.body);
     }
     print(response.body);
+  }
+
+  static Future partsUpdate(id, price) async {
+    var url = 'http://10.0.2.2:8000/api/parts/update/$id';
+    final response = await http.post(url, body: {
+      'price': "$price",
+    });
+    if (response.statusCode == 200) {
+      print(response.body);
+    }
+    print(response.body);
+  }
+
+  static Future partsQty(id, qty) async {
+    var url = 'http://10.0.2.2:8000/api/parts/update/qty/$id';
+    final response = await http.post(url, body: {
+      'qty': "$qty",
+    });
+    if (response.statusCode == 200) {
+      print(response.body);
+    }
+    print(response.body);
+  }
+
+  static Future partsDelete(id) async {
+    var url = 'http://10.0.2.2:8000/api/parts/delete/$id';
+    final response = await http.delete(url);
+    try {
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } catch (e) {
+      print(e);
+    }
   }
 }

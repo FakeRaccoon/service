@@ -13,14 +13,13 @@ class ReceiptInput extends StatefulWidget {
 }
 
 class _ReceiptInputState extends State<ReceiptInput> {
+  final _key = GlobalKey<FormState>();
+
   DateTime selectedDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime picked = await showDatePicker(
-        context: context,
-        initialDate: selectedDate,
-        firstDate: DateTime(2015, 8),
-        lastDate: DateTime(2101));
+        context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate)
       setState(() {
         selectedDate = picked;
@@ -31,11 +30,12 @@ class _ReceiptInputState extends State<ReceiptInput> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    FlutterStatusbarcolor.setStatusBarColor(Colors.amber);
+    FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
+    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
     isButtonVisible = true;
     card2Visible = false;
     tfEnable1 = true;
-    API.getForm();
+    API.getForm(1);
   }
 
   var customerController = TextEditingController();
@@ -50,10 +50,8 @@ class _ReceiptInputState extends State<ReceiptInput> {
         iconTheme: IconThemeData(color: Colors.black),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Receipt Input',
-          style: GoogleFonts.sourceSansPro(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        title:
+            Text('Receipt Input', style: GoogleFonts.sourceSansPro(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
       body: Stack(
         children: [
@@ -66,7 +64,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
             child: SafeArea(
               child: Column(
                 children: [
-                  customCard1(),
+                  customCard(),
                 ],
               ),
             ),
@@ -80,76 +78,89 @@ class _ReceiptInputState extends State<ReceiptInput> {
   bool card2Visible;
   bool tfEnable1;
 
-  Card customCard1() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      elevation: 4,
-      margin: EdgeInsets.symmetric(horizontal: 15),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('TANGGAL TERIMA',
-                    style:
-                        GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
-                Spacer(),
-                Text('JAM',
-                    style:
-                        GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
-              ],
-            ),
-            Row(
-              children: [
-                Text(
-                  DateFormat('d MMMM y').format(DateTime.now()).toString(),
-                  style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                Spacer(),
-                Text(DateFormat.jm().format(DateTime.now()).toString(),
-                    style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text(
-              'CUSTOMER',
-              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-            CustomTextField(
-              enable: tfEnable1,
-              controller: customerController,
-              readOnly: false,
-              icon: Icon(Icons.person),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'BARANG',
-              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-            CustomTextField(
-              enable: tfEnable1,
-              controller: itemController,
-              readOnly: false,
-              icon: Icon(Icons.inventory),
-            ),
-            Visibility(
-              visible: isButtonVisible,
-              child: Column(
+  Widget customCard() {
+    return Form(
+      key: _key,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        elevation: 4,
+        margin: EdgeInsets.symmetric(horizontal: 15),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('TANGGAL TERIMA',
+                      style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  Spacer(),
+                  Text('JAM', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    DateFormat('d MMMM y').format(DateTime.now()).toString(),
+                    style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  Spacer(),
+                  Text(DateFormat.jm().format(DateTime.now()).toString(),
+                      style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
+                ],
+              ),
+              SizedBox(height: 20),
+              Text(
+                'CUSTOMER',
+                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
+              TextFormField(
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Isi nama customer!';
+                  }
+                  return null;
+                },
+                controller: customerController,
+                decoration: InputDecoration(),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'BARANG',
+                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
+              TextFormField(
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Isi nama barang!';
+                  }
+                  return null;
+                },
+                controller: itemController,
+                decoration: InputDecoration(),
+              ),
+              Column(
                 children: [
                   SizedBox(height: 20),
                   CustomButton(
-                    onTap: () {},
-                    color: customerController.text.isNotEmpty && itemController.text.isNotEmpty
-                        ? Colors.amber
-                        : Colors.grey,
+                    onTap: () {
+                      if (_key.currentState.validate()) {
+                        API.formCreate(customerController.text, itemController.text).whenComplete(() {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Data berhasil disimpan'),
+                          ));
+                          customerController.clear();
+                          itemController.clear();
+                        });
+                      }
+                    },
+                    color: Colors.amber,
                     title: 'Simpan',
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -195,9 +206,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   });
                 }
               },
-              color: customerController.text.isNotEmpty && itemController.text.isNotEmpty
-                  ? Colors.amber
-                  : Colors.grey,
+              color: customerController.text.isNotEmpty && itemController.text.isNotEmpty ? Colors.amber : Colors.grey,
               title: 'Simpan',
             ),
           ],
