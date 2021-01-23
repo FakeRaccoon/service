@@ -6,17 +6,21 @@ import 'package:service/models/item_model.dart';
 import 'package:service/models/parts_model.dart';
 
 class API {
-  static Future getForm(status) async {
+  static Future<List<FormResult>> getForm(status) async {
     var url = 'http://10.0.2.2:8000/api/form';
-    final response = await http.get(url, headers: {
-      "status": "$status",
-    });
-    if (response.statusCode == 200) {
-      var decode = json.decode(response.body);
-      var parsed = json.encode(decode["data"]);
-      final List form = formResultFromJson(parsed);
-      print(parsed);
-      return form;
+    try {
+      final response = await http.get(url, headers: {
+        "status": "$status",
+      });
+      if (response.statusCode == 200) {
+        var decode = json.decode(response.body);
+        var parsed = json.encode(decode["data"]);
+        final List form = formResultFromJson(parsed);
+        print(parsed);
+        return form;
+      }
+    } on Exception catch (e) {
+      print(e); // TODO
     }
   }
 
@@ -24,12 +28,7 @@ class API {
     var url = 'http://10.0.2.2:8000/api/form/create';
     final response = await http.post(
       url,
-      body: {
-        "customer": "$customer",
-        "item": "$item",
-        "status": "1",
-        "receipt_date": DateTime.now().toString()
-      },
+      body: {"customer": "$customer", "item": "$item", "status": "1", "receipt_date": DateTime.now().toString()},
     );
     try {
       if (response.statusCode == 200) {
@@ -44,11 +43,12 @@ class API {
     var url = 'http://10.0.2.2:8000/api/form/update/$id';
     final response = await http.post(
       url,
-      body: {
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
         "estimated_date": "$estimatedDate",
         "estimated_fee": "$estimatedFee",
-        "status": "2",
-      },
+        "status": 2,
+      }),
     );
     try {
       if (response.statusCode == 200) {
@@ -97,15 +97,20 @@ class API {
 
   static Future partsCreate(formId, name, qty) async {
     var url = 'http://10.0.2.2:8000/api/parts/create';
-    final response = await http.post(url, body: {
-      'form_id': "$formId",
-      'name': "$name",
-      'qty': "$qty",
-    });
-    if (response.statusCode == 200) {
-      print(response.body);
+    try {
+      final response = await http.post(url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            'form_id': formId,
+            'name': name,
+            'qty': qty,
+          }));
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } on Exception catch (e) {
+      print(e);
     }
-    print(response.body);
   }
 
   static Future partsUpdate(id, price) async {

@@ -21,16 +21,12 @@ class _SparePartState extends State<SparePart> {
     super.initState();
     FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
     FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    fetch();
+    formFuture = API.getForm(2);
   }
 
-  fetch() {
-    API.getForm(2).then((value) => form = value).whenComplete(() {
-      setState(() {});
-    });
-  }
+  Future<List<FormResult>> formFuture;
 
-  Future getRefresh(index) async {
+  Future onRefresh(index) async {
     API.getForm(2).then((value) => form = value).whenComplete(() {
       setState(() {});
       sumList.clear();
@@ -41,14 +37,16 @@ class _SparePartState extends State<SparePart> {
       int sumSum = sumList.fold(0, (p, e) => p + e);
       print(sumSum);
       if (sumSum != 0) {
-        API.formTotal(form[index].id, sumSum.toString()).whenComplete(() => fetch());
+        API.formTotal(form[index].id, sumSum.toString()).whenComplete(() {
+          formFuture = API.getForm(2);
+          setState(() {});
+        });
       }
     });
   }
 
   var feeController = TextEditingController();
-  List<FormResult> form = List();
-  bool loading;
+  List<FormResult> form = [];
   List sumList = [];
 
   @override
@@ -74,119 +72,129 @@ class _SparePartState extends State<SparePart> {
             height: mediaQ.height * .25,
             width: mediaQ.width,
           ),
-          SafeArea(
-            child: ListView.builder(
-              itemCount: form.length,
-              itemBuilder: (BuildContext context, int index) {
-                return Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  margin: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: ExpandablePanel(
-                      header: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            form[index].item,
-                            style: GoogleFonts.sourceSansPro(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      expanded: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: form[index].parts.length,
-                            itemBuilder: (BuildContext context, int idx) {
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                onTap: () => showModalBottomSheet(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.only(
-                                      topRight: Radius.circular(10),
-                                      topLeft: Radius.circular(10),
-                                    )),
-                                    isScrollControlled: true,
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return buildContainer(mediaQ, index, idx);
-                                    }),
-                                title: Row(
-                                  children: [
-                                    Text(form[index].parts[idx].name),
-                                    Spacer(),
-                                    Text(form[index].parts[idx].price != 0
-                                        ? 'Rp ' + currency.format(form[index].parts[idx].price).toString()
-                                        : ''),
-                                    SizedBox(width: 20),
-                                    Text('x' + form[index].parts[idx].qty.toString()),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Text(
-                                'Total',
-                                style: GoogleFonts.sourceSansPro(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Spacer(),
-                              Text(
-                                form[index].total == 0 ? 0 : 'Rp ' + currency.format(form[index].total ?? 0).toString(),
-                                style: GoogleFonts.sourceSansPro(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          CustomButton(
-                            title: 'Simpan',
-                            color: Colors.amber,
-                            onTap: () {},
-                          )
-                          // ListTile(
-                          //   contentPadding: EdgeInsets.zero,
-                          //   title: Row(
-                          //     children: [
-                          //       Text(
-                          //         'Total',
-                          //         style: GoogleFonts.sourceSansPro(
-                          //           fontSize: 18,
-                          //           fontWeight: FontWeight.bold,
-                          //         ),
-                          //       ),
-                          //       Spacer(),
-                          //       Text('Rp ' + form[index].total.toString()),
-                          //     ],
-                          //   ),
-                          // ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          )
+          showUI(mediaQ, currency),
         ],
       ),
     );
   }
 
-  buildContainer(Size mediaQ, int index, int idx) {
+  Widget showUI(Size mediaQ, NumberFormat currency) {
+    return SafeArea(
+      child: FutureBuilder(
+        future: formFuture,
+        builder: (context, AsyncSnapshot snapshot) {
+          if (snapshot.hasData) {
+            return cardFormList(snapshot, mediaQ, currency);
+          }
+          return Center(
+            child: CircularProgressIndicator(
+              backgroundColor: Colors.black,
+              valueColor: new AlwaysStoppedAnimation<Color>(Colors.amber),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget cardFormList(AsyncSnapshot<List<FormResult>> snapshot, Size mediaQ, NumberFormat currency) {
+    return ListView.builder(
+      itemCount: snapshot.data.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: ExpandablePanel(
+              header: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    snapshot.data[index].item,
+                    style: GoogleFonts.sourceSansPro(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              expanded: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  fees(snapshot, index, mediaQ, currency),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Text(
+                        'Total',
+                        style: GoogleFonts.sourceSansPro(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Spacer(),
+                      Text(
+                        snapshot.data[index].total == 0
+                            ? 0
+                            : 'Rp ' + currency.format(snapshot.data[index].total ?? 0).toString(),
+                        style: GoogleFonts.sourceSansPro(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  CustomButton(
+                    title: 'Simpan',
+                    color: Colors.amber,
+                    onTap: () {},
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget fees(AsyncSnapshot snapshot, int index, Size mediaQ, NumberFormat currency) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: snapshot.data[index].parts.length,
+      itemBuilder: (BuildContext context, int idx) {
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          onTap: () => showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(10),
+                  topLeft: Radius.circular(10),
+                ),
+              ),
+              isScrollControlled: true,
+              context: context,
+              builder: (BuildContext context) => feesInput(snapshot, mediaQ, index, idx)),
+          title: Row(
+            children: [
+              Text(snapshot.data[index].parts[idx].name),
+              Spacer(),
+              Text(snapshot.data[index].parts[idx].price != 0
+                  ? 'Rp ' + currency.format(snapshot.data[index].parts[idx].price).toString()
+                  : ''),
+              SizedBox(width: 20),
+              Text('x' + snapshot.data[index].parts[idx].qty.toString()),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget feesInput(AsyncSnapshot<List<FormResult>> snapshot, Size mediaQ, int index, int idx) {
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
       child: Container(
@@ -211,11 +219,11 @@ class _SparePartState extends State<SparePart> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                  )
+                  ),
                 ],
               ),
               Text(
-                'Input harga untuk sparepart ${form[index].parts[idx].name}.',
+                'Input harga untuk sparepart ${snapshot.data[index].parts[idx].name}.',
               ),
               SizedBox(height: 10),
               CustomTextField(
@@ -233,10 +241,9 @@ class _SparePartState extends State<SparePart> {
                 onTap: () {
                   if (feeController.text.isNotEmpty) {
                     var q = int.parse(feeController.text.replaceAll(',', ''));
-                    API.partsUpdate(form[index].parts[idx].id, q).whenComplete(() {
-                      getRefresh(index);
+                    API.partsUpdate(snapshot.data[index].parts[idx].id, q).whenComplete(() {
+                      onRefresh(index);
                     });
-
                     Navigator.pop(context);
                     feeController.clear();
                   }
