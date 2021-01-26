@@ -21,12 +21,12 @@ class _SparePartState extends State<SparePart> {
     super.initState();
     FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
     FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    formFuture = API.getForm(2);
+    onRefresh();
   }
 
-  Future<List<FormResult>> formFuture;
+  Future formFuture;
 
-  Future onRefresh(index) async {
+  Future getTotal(index) async {
     API.getForm(2).then((value) => form = value).whenComplete(() {
       setState(() {});
       sumList.clear();
@@ -37,12 +37,17 @@ class _SparePartState extends State<SparePart> {
       int sumSum = sumList.fold(0, (p, e) => p + e);
       print(sumSum);
       if (sumSum != 0) {
-        API.formTotal(form[index].id, sumSum.toString()).whenComplete(() {
+        API.formTotal(form[index].id, sumSum).whenComplete(() {
           formFuture = API.getForm(2);
           setState(() {});
         });
       }
     });
+  }
+
+  onRefresh() async {
+    formFuture = API.getForm(2);
+    setState(() {});
   }
 
   var feeController = TextEditingController();
@@ -56,12 +61,7 @@ class _SparePartState extends State<SparePart> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          'Part dan Biaya',
-          style: GoogleFonts.sourceSansPro(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text('Part dan Biaya', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -97,7 +97,7 @@ class _SparePartState extends State<SparePart> {
     );
   }
 
-  Widget cardFormList(AsyncSnapshot<List<FormResult>> snapshot, Size mediaQ, NumberFormat currency) {
+  Widget cardFormList(AsyncSnapshot snapshot, Size mediaQ, NumberFormat currency) {
     return ListView.builder(
       itemCount: snapshot.data.length,
       itemBuilder: (BuildContext context, int index) {
@@ -108,18 +108,11 @@ class _SparePartState extends State<SparePart> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: ExpandablePanel(
-              header: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    snapshot.data[index].item,
-                    style: GoogleFonts.sourceSansPro(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              theme: ExpandableThemeData(headerAlignment: ExpandablePanelHeaderAlignment.center),
+              header: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(snapshot.data[index].item,
+                      style: GoogleFonts.sourceSansPro(fontSize: 18, fontWeight: FontWeight.bold))),
               expanded: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -148,9 +141,11 @@ class _SparePartState extends State<SparePart> {
                   ),
                   SizedBox(height: 20),
                   CustomButton(
-                    title: 'Simpan',
+                    title: 'Konfirmasi',
                     color: Colors.amber,
-                    onTap: () {},
+                    onTap: () {
+                      API.formStatusUpdate(snapshot.data[index].id, 3).whenComplete(() => onRefresh());
+                    },
                   )
                 ],
               ),
@@ -194,7 +189,7 @@ class _SparePartState extends State<SparePart> {
     );
   }
 
-  Widget feesInput(AsyncSnapshot<List<FormResult>> snapshot, Size mediaQ, int index, int idx) {
+  Widget feesInput(AsyncSnapshot snapshot, Size mediaQ, int index, int idx) {
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
       child: Container(
@@ -242,7 +237,7 @@ class _SparePartState extends State<SparePart> {
                   if (feeController.text.isNotEmpty) {
                     var q = int.parse(feeController.text.replaceAll(',', ''));
                     API.partsUpdate(snapshot.data[index].parts[idx].id, q).whenComplete(() {
-                      onRefresh(index);
+                      getTotal(index);
                     });
                     Navigator.pop(context);
                     feeController.clear();

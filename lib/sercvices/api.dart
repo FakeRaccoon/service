@@ -6,7 +6,7 @@ import 'package:service/models/item_model.dart';
 import 'package:service/models/parts_model.dart';
 
 class API {
-  static Future<List<FormResult>> getForm(status) async {
+  static Future getForm(status) async {
     var url = 'http://10.0.2.2:8000/api/form';
     try {
       final response = await http.get(url, headers: {
@@ -61,8 +61,12 @@ class API {
 
   static Future formTotal(id, total) async {
     var url = 'http://10.0.2.2:8000/api/form/update/total/$id';
-    final response = await http.post(url, body: {"total": total});
     try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"total": total}),
+      );
       if (response.statusCode == 200) {
         print(response.body);
       }
@@ -124,25 +128,47 @@ class API {
     print(response.body);
   }
 
-  static Future partsQty(id, qty) async {
-    var url = 'http://10.0.2.2:8000/api/parts/update/qty/$id';
-    final response = await http.post(url, body: {
-      'qty': "$qty",
-    });
-    if (response.statusCode == 200) {
-      print(response.body);
-    }
-    print(response.body);
-  }
-
-  static Future partsDelete(id) async {
-    var url = 'http://10.0.2.2:8000/api/parts/delete/$id';
-    final response = await http.delete(url);
+  static Future formFeeUpdate(id, fee) async {
+    var url = "http://10.0.2.2:8000/api/form/update/fee/$id";
     try {
+      final response =
+          await http.post(url, headers: {"Content-Type": "application/json"}, body: jsonEncode({"final_fee": fee}));
       if (response.statusCode == 200) {
         print(response.body);
       }
-    } catch (e) {
+    } on Exception catch (e) {
+      print(e);
+    }
+  }
+
+  static Future formRepairStatusUpdate(id, int repair) async {
+    var url = "http://10.0.2.2:8000/api/form/update/repair/$id";
+    try {
+      final response = await http.post(url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "repair_process": repair,
+          }));
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } on Exception catch (e) {
+      print(e);
+    }
+  }
+
+  static Future formStatusUpdate(id, int status) async {
+    var url = "http://10.0.2.2:8000/api/form/update/status/$id";
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"status": status}),
+      );
+      if (response.statusCode == 200) {
+        print(response.body);
+      }
+    } on Exception catch (e) {
       print(e);
     }
   }

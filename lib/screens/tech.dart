@@ -25,9 +25,7 @@ class _TechState extends State<Tech> {
     super.initState();
     FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
     FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    formFuture = API.getForm(1);
-    form2Future = API.getForm(2);
-    partsFuture = API.getItems();
+    onRefresh();
   }
 
   List<TextEditingController> feeController = [];
@@ -36,6 +34,7 @@ class _TechState extends State<Tech> {
 
   Future formFuture;
   Future form2Future;
+  Future form3Future;
   Future partsFuture;
 
   var currency = NumberFormat.decimalPattern();
@@ -43,7 +42,13 @@ class _TechState extends State<Tech> {
   DateTime selectedDate = DateTime.now();
   List<Map<String, dynamic>> selectedParts = [];
 
-  Future getRefresh(index) async {}
+  Future onRefresh() async {
+    formFuture = API.getForm(1);
+    form2Future = API.getForm(4);
+    form3Future = API.getForm(5);
+    partsFuture = API.getItems();
+    setState(() {});
+  }
 
   Future getSelectedParts() async {
     var decoded = jsonEncode(selectedParts);
@@ -60,10 +65,6 @@ class _TechState extends State<Tech> {
 
   List<SelectedParts> fetchedParts = [];
 
-  List<String> tabBar = ["Baru", "Confirmed"];
-
-  TabController tabController;
-
   @override
   Widget build(BuildContext context) {
     var mediaQ = MediaQuery.of(context).size;
@@ -79,7 +80,7 @@ class _TechState extends State<Tech> {
           actions: [
             IconButton(
               icon: Icon(Icons.refresh),
-              onPressed: () {},
+              onPressed: () => onRefresh(),
             )
           ],
           elevation: 0,
@@ -90,7 +91,6 @@ class _TechState extends State<Tech> {
             indicatorColor: Colors.black,
             indicatorSize: TabBarIndicatorSize.label,
             unselectedLabelColor: Colors.grey[800],
-            controller: tabController,
             tabs: [
               Text(
                 'Pending',
@@ -121,7 +121,7 @@ class _TechState extends State<Tech> {
               children: [
                 pendingUI(),
                 partsUI(),
-                Text('3'),
+                processUI(),
               ],
             ),
           ],
@@ -152,7 +152,29 @@ class _TechState extends State<Tech> {
       future: form2Future,
       builder: (context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
+          if (snapshot.data.isEmpty) {
+            return Center(
+              child: Text('No data'),
+            );
+          }
           return confirmedFormList(snapshot);
+        }
+        return Center(
+          child: CircularProgressIndicator(
+            backgroundColor: Colors.black,
+            valueColor: new AlwaysStoppedAnimation<Color>(Colors.amber),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget processUI() {
+    return FutureBuilder(
+      future: form3Future,
+      builder: (context, AsyncSnapshot snapshot) {
+        if (snapshot.hasData) {
+          return onProcess(snapshot);
         }
         return Center(
           child: CircularProgressIndicator(
@@ -178,10 +200,12 @@ class _TechState extends State<Tech> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: ExpandablePanel(
+              theme: ExpandableThemeData(headerAlignment: ExpandablePanelHeaderAlignment.center),
               header: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
+                    contentPadding: EdgeInsets.zero,
                     title: Text(snapshot.data[index].item,
                         style: GoogleFonts.sourceSansPro(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
@@ -298,9 +322,12 @@ class _TechState extends State<Tech> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: ExpandablePanel(
-              header: Text(
-                snapshot.data[index].item,
-                style: GoogleFonts.sourceSansPro(fontSize: 18, fontWeight: FontWeight.bold),
+              theme: ExpandableThemeData(headerAlignment: ExpandablePanelHeaderAlignment.center),
+              header: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(snapshot.data[index].item,
+                    style: GoogleFonts.sourceSansPro(fontSize: 18, fontWeight: FontWeight.bold)),
+                subtitle: Text('Estimasi selesai ${DateFormat('d MMMM y').format(snapshot.data[index].estimatedDate)}'),
               ),
               expanded: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -317,46 +344,59 @@ class _TechState extends State<Tech> {
                           children: [
                             Text(snapshot.data[index].parts[idx].name),
                             Spacer(),
-                            Text(snapshot.data[index].parts[idx].price != 0
-                                ? 'Rp ' + currency.format(snapshot.data[index].parts[idx].price).toString()
-                                : ''),
-                            SizedBox(width: 20),
                             Text('x' + snapshot.data[index].parts[idx].qty.toString()),
                           ],
                         ),
                       );
                     },
                   ),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Text(
-                        'Total',
-                        style: GoogleFonts.sourceSansPro(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Spacer(),
-                      Text(
-                        snapshot.data[index].total == 0
-                            ? 0
-                            : 'Rp ' + currency.format(snapshot.data[index].total ?? 0).toString(),
-                        style: GoogleFonts.sourceSansPro(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
                   SizedBox(height: 20),
                   CustomButton(
                     title: 'Proses',
                     color: Colors.amber,
-                    onTap: () {},
-                  )
+                    onTap: () {
+                      API.formStatusUpdate(snapshot.data[index].id, 5).whenComplete(() => onRefresh());
+                    },
+                  ),
                 ],
               ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget onProcess(AsyncSnapshot snapshot) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: snapshot.data.length,
+      itemBuilder: (BuildContext context, int index) {
+        var deadline = snapshot.data[index].estimatedDate.difference(DateTime.now()).inDays;
+        return Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(snapshot.data[index].item,
+                      style: GoogleFonts.sourceSansPro(fontSize: 18, fontWeight: FontWeight.bold)),
+                  // subtitle: Text(DateFormat('d MMMM y').format(snapshot.data[index].estimatedDate).toString()),
+                  subtitle: Text('Harus selesai dalam $deadline hari.'),
+                ),
+                CustomButton(
+                  title: 'Selesai',
+                  color: Colors.amber,
+                  onTap: () {
+                    print('done');
+                    // API.formRepairStatusUpdate(snapshot.data[index].id, 1).whenComplete(() => onRefresh());
+                  },
+                ),
+              ],
             ),
           ),
         );
@@ -468,6 +508,7 @@ class _TechState extends State<Tech> {
                 CustomButton(
                   onTap: () {
                     Navigator.pop(context);
+                    fetchSelectedParts();
                   },
                   color: Colors.amber,
                   title: 'Proses',

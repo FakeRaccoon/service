@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:service/home.dart';
-import 'package:service/item_page.dart';
 import 'package:service/screens/users.dart';
 
 class Body extends StatefulWidget {

@@ -24,7 +24,6 @@ class HomeMenuCard extends StatelessWidget {
               leading: icon,
               title: Text(title,
                   style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18)),
-              trailing: Icon(Icons.arrow_forward_ios, size: 25, color: Colors.black),
             ),
           ),
         ),

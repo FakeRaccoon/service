@@ -15,9 +15,11 @@ class FormResult {
     this.item,
     this.estimatedFee,
     this.total,
+    this.finalFee,
     this.status,
     this.receiptDate,
     this.estimatedDate,
+    this.repairProcess,
     this.createdAt,
     this.updatedAt,
     this.parts,
@@ -28,9 +30,11 @@ class FormResult {
   String item;
   int estimatedFee;
   int total;
+  int finalFee;
   int status;
   DateTime receiptDate;
   DateTime estimatedDate;
+  bool repairProcess;
   DateTime createdAt;
   DateTime updatedAt;
   List<Part> parts;
@@ -41,9 +45,11 @@ class FormResult {
     item: json["item"] == null ? null : json["item"],
     estimatedFee: json["estimated_fee"] == null ? null : json["estimated_fee"],
     total: json["total"] == null ? null : json["total"],
+    finalFee: json["final_fee"] == null ? null : json["final_fee"],
     status: json["status"] == null ? null : json["status"],
     receiptDate: json["receipt_date"] == null ? null : DateTime.parse(json["receipt_date"]),
     estimatedDate: json["estimated_date"] == null ? null : DateTime.parse(json["estimated_date"]),
+    repairProcess: json["repair_process"] == null ? null : json["repair_process"],
     createdAt: json["created_at"] == null ? null : DateTime.parse(json["created_at"]),
     updatedAt: json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
     parts: json["parts"] == null ? null : List<Part>.from(json["parts"].map((x) => Part.fromJson(x))),
@@ -55,9 +61,11 @@ class FormResult {
     "item": item == null ? null : item,
     "estimated_fee": estimatedFee == null ? null : estimatedFee,
     "total": total == null ? null : total,
+    "final_fee": finalFee == null ? null : finalFee,
     "status": status == null ? null : status,
     "receipt_date": receiptDate == null ? null : receiptDate.toIso8601String(),
     "estimated_date": estimatedDate == null ? null : estimatedDate.toIso8601String(),
+    "repair_process": repairProcess == null ? null : repairProcess,
     "created_at": createdAt == null ? null : createdAt.toIso8601String(),
     "updated_at": updatedAt == null ? null : updatedAt.toIso8601String(),
     "parts": parts == null ? null : List<dynamic>.from(parts.map((x) => x.toJson())),
@@ -87,8 +95,8 @@ class Part {
     id: json["id"] == null ? null : json["id"],
     formId: json["form_id"] == null ? null : json["form_id"],
     name: json["name"] == null ? null : json["name"],
-    qty: json["qty"] == null ? 0 : json["qty"],
-    price: json["price"] == null ? 0 : json["price"],
+    qty: json["qty"] == null ? null : json["qty"],
+    price: json["price"] == null ? null : json["price"],
     createdAt: json["created_at"] == null ? null : DateTime.parse(json["created_at"]),
     updatedAt: json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
   );
