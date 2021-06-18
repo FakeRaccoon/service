@@ -68,9 +68,11 @@ class _SparePartState extends State<SparePart> {
       body: Stack(
         children: [
           Container(
-            color: Colors.amber,
             height: mediaQ.height * .25,
-            width: mediaQ.width,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.amber,
+            ),
           ),
           showUI(mediaQ, currency),
         ],
@@ -84,6 +86,11 @@ class _SparePartState extends State<SparePart> {
         future: formFuture,
         builder: (context, AsyncSnapshot snapshot) {
           if (snapshot.hasData) {
+            if (snapshot.data.isEmpty) {
+              return Center(
+                child: Text('No data'),
+              );
+            }
             return cardFormList(snapshot, mediaQ, currency);
           }
           return Center(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:service/componen/custom_button.dart';
-import 'package:service/login.dart';
+import 'package:service/root.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Users extends StatefulWidget {
@@ -30,15 +30,14 @@ class _UsersState extends State<Users> {
       });
       print(name);
     } else {
-      Get.offAll(Login());
+      Get.offAll(Root());
     }
   }
 
-  logout() async {
+  Future logout() async {
     sharedPreferences = await SharedPreferences.getInstance();
     sharedPreferences.clear();
     sharedPreferences.commit();
-    getUserInfo();
   }
 
   String name;
@@ -71,8 +70,37 @@ class _UsersState extends State<Users> {
                 subtitle: Text(userRole ?? ''),
               ),
             ),
+            SizedBox(height: 10),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Superuser', style: GoogleFonts.sourceSansPro()),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Manage Users', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                      trailing: Icon(Icons.chevron_right),
+                    ),
+                    Divider(thickness: 1),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Log', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                      trailing: Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(height: 20),
-            CustomButton(title: 'Logout', color: Colors.amber, onTap: () => logout()),
+            CustomButton(
+              onTap: () => logout().then((value) => getUserInfo()),
+              color: Colors.amber,
+              title: 'Konfirmasi',
+            )
           ],
         ),
       ),

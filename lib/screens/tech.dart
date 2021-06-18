@@ -1,17 +1,19 @@
 import 'dart:convert';
 
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
+import 'package:dio/dio.dart';
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:service/componen/custom_button.dart';
 import 'package:service/componen/custom_text_field.dart';
-import 'package:service/models/form.dart';
 import 'package:service/sercvices/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Tech extends StatefulWidget {
   @override
@@ -50,6 +52,57 @@ class _TechState extends State<Tech> {
     setState(() {});
   }
 
+  SharedPreferences sharedPreferences;
+
+  Future formUpdate(id, estimatedDate, estimatedFee) async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    final token = sharedPreferences.getString('token');
+    var url = 'http://10.0.2.2:8000/api/form/update';
+    try {
+      final response = await Dio().post(
+        url,
+        options: Options(headers: {"Accept": "application/json", "Authorization": "Bearer $token"}),
+        queryParameters: {
+          "id": id,
+          "estimated_date": estimatedDate,
+          "estimated_fee": estimatedFee,
+          "status": 2,
+        },
+      );
+      if (response.statusCode == 200) {
+        print(response.data['message']);
+        fetchedParts.toList().forEach((element) {
+          partsCreate(id, element.name, element.qty);
+        });
+      }
+    } on DioError catch (e) {
+      print(e.response.data['message']);
+    }
+  }
+
+  Future partsCreate(formId, name, qty) async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    final token = sharedPreferences.getString('token');
+    var url = 'http://10.0.2.2:8000/api/parts/create';
+    try {
+      final response = await Dio().post(url,
+          options: Options(headers: {
+            "Authorization": "Bearer $token",
+            "Accept": "application/json",
+          }),
+          queryParameters: {
+            'form_id': formId,
+            'name': name,
+            'qty': qty,
+          });
+      if (response.statusCode == 200) {
+        print(response.data['message']);
+      }
+    } on DioError catch (e) {
+      print(e.response.data);
+    }
+  }
+
   Future getSelectedParts() async {
     var decoded = jsonEncode(selectedParts);
     final parts = selectedPartsFromJson(decoded);
@@ -65,65 +118,111 @@ class _TechState extends State<Tech> {
 
   List<SelectedParts> fetchedParts = [];
 
+  TextEditingController problemController = TextEditingController();
+
+  final items = List<String>.generate(5, (index) => "$index");
+
   @override
   Widget build(BuildContext context) {
     var mediaQ = MediaQuery.of(context).size;
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
-          title: Text(
-            'Teknisi',
-            style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: () => onRefresh(),
-            )
-          ],
+          iconTheme: IconThemeData(color: Colors.black),
+          title: Text('Teknisi', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.black)),
           elevation: 0,
-          backgroundColor: Colors.amber,
-          bottom: TabBar(
-            labelPadding: EdgeInsets.all(10),
-            automaticIndicatorColorAdjustment: true,
-            indicatorColor: Colors.black,
-            indicatorSize: TabBarIndicatorSize.label,
-            unselectedLabelColor: Colors.grey[800],
-            tabs: [
-              Text(
-                'Pending',
-                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 16),
+          backgroundColor: Colors.transparent,
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(40),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                width: Get.width / 2,
+                child: TabBar(
+                  labelPadding: EdgeInsets.all(10),
+                  isScrollable: true,
+                  labelColor: Colors.black,
+                  labelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+                  unselectedLabelStyle: GoogleFonts.sourceSansPro(),
+                  automaticIndicatorColorAdjustment: true,
+                  indicatorColor: Colors.black,
+                  unselectedLabelColor: Color(0xff7c7c7c),
+                  tabs: [
+                    Text(
+                      'Ongoing',
+                      style: GoogleFonts.sourceSansPro(fontSize: 16),
+                    ),
+                    Text(
+                      'History',
+                      style: GoogleFonts.sourceSansPro(fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
-              Text(
-                'Confirmed',
-                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text(
-                'On Process',
-                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ],
+            ),
           ),
         ),
         body: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-              child: Container(
-                color: Colors.amber,
-                height: mediaQ.height * .25,
-                width: mediaQ.width,
+            // Container(
+            //   color: Color.fromRGBO(227, 227, 225, 1),
+            //   height: mediaQ.height * .25,
+            //   width: mediaQ.width,
+            // ),
+            SafeArea(
+              child: TabBarView(
+                physics: NeverScrollableScrollPhysics(),
+                children: [
+                  ListView.builder(
+                    padding: EdgeInsets.all(10),
+                    itemCount: items.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: ListTile(
+                            title: Text('Item ${items[index]}'),
+                            subtitle: Text(DateFormat('d MMMM y').format(DateTime.now())),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Center(child: Text('Tidak ada data')),
+                  // pendingUI(),
+                  // partsUI(),
+                  // processUI(),
+                ],
               ),
             ),
-            TabBarView(
-              children: [
-                pendingUI(),
-                partsUI(),
-                processUI(),
-              ],
-            ),
+            // ListView.builder(
+            //   itemCount: items.length,
+            //   itemBuilder: (BuildContext context, int index) {
+            //     return Card(
+            //       elevation: 4,
+            //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            //       margin: EdgeInsets.all(10),
+            //       child: Padding(
+            //         padding: const EdgeInsets.all(20),
+            //         child: Column(
+            //           crossAxisAlignment: CrossAxisAlignment.start,
+            //           children: [
+            //             Text('Item $index'),
+            //             ListTile(
+            //               contentPadding: EdgeInsets.zero,
+            //               title: Text('${items[index]}'),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     );
+            //   },
+            // ),
           ],
         ),
       ),
@@ -135,6 +234,11 @@ class _TechState extends State<Tech> {
       future: formFuture,
       builder: (context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
+          if (snapshot.data.isEmpty) {
+            return Center(
+              child: Text('No data'),
+            );
+          }
           return cardFormList(snapshot);
         }
         return Center(
@@ -174,6 +278,11 @@ class _TechState extends State<Tech> {
       future: form3Future,
       builder: (context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
+          if (snapshot.data.isEmpty) {
+            return Center(
+              child: Text('No data'),
+            );
+          }
           return onProcess(snapshot);
         }
         return Center(
@@ -232,6 +341,7 @@ class _TechState extends State<Tech> {
                           icon: Icon(Icons.search),
                           onPressed: () {
                             showMaterialModalBottomSheet(
+                              expand: true,
                               shape: RoundedRectangleBorder(
                                   borderRadius:
                                       BorderRadius.only(topRight: Radius.circular(10), topLeft: Radius.circular(10))),
@@ -285,17 +395,7 @@ class _TechState extends State<Tech> {
                     CustomButton(
                       onTap: () {
                         var q = int.parse(feeController[index].text.replaceAll(",", ""));
-                        API
-                            .formUpdate(snapshot.data[index].id, selectedDate, q)
-                            .then((value) => fetchedParts.toList().forEach((element) {
-                                  API.partsCreate(snapshot.data[index].id, element.name, element.qty);
-                                }))
-                            .whenComplete(() {
-                          Navigator.pop(context);
-                        });
-                        fetchedParts.toList().forEach((element) {
-                          print('${element.name} == ${element.qty}');
-                        });
+                        formUpdate(snapshot.data[index].id, selectedDate, q);
                       },
                       title: 'Simpan',
                       color: Colors.amber,
@@ -454,23 +554,25 @@ class _TechState extends State<Tech> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Pilih sparepart',
-                      style: GoogleFonts.sourceSansPro(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                SafeArea(
+                  child: Row(
+                    children: [
+                      Text(
+                        'Pilih sparepart',
+                        style: GoogleFonts.sourceSansPro(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    )
-                  ],
+                      Spacer(),
+                      IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      )
+                    ],
+                  ),
                 ),
                 FutureBuilder(
                   future: partsFuture,

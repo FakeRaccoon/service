@@ -2,7 +2,7 @@
     package="com.amt.service">
     <uses-permission android:name="android.permission.INTERNET" />
    <application
-        android:label="service"
+        android:label="Service App"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
        <uses-library

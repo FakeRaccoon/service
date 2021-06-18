@@ -1,22 +1,17 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flushbar/flushbar.dart';
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:service/body.dart';
 import 'package:service/componen/custom_button.dart';
-import 'package:service/models/LoginInfo.dart';
-import 'package:service/screens/Register.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:service/login.dart';
 
-class Login extends StatefulWidget {
+class Register extends StatefulWidget {
   @override
-  _LoginState createState() => _LoginState();
+  _RegisterState createState() => _RegisterState();
 }
 
-class _LoginState extends State<Login> {
+class _RegisterState extends State<Register> {
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -33,10 +28,9 @@ class _LoginState extends State<Login> {
     });
   }
 
+  TextEditingController nameController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
   TextEditingController passController = TextEditingController();
-
-  String externalIds;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +50,22 @@ class _LoginState extends State<Login> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  Text('Login', style: GoogleFonts.openSans(fontWeight: FontWeight.bold, fontSize: 22)),
+                  Text('Register', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 22)),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    validator: (String value) {
+                      if (value.isEmpty) {
+                        return 'nama tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    controller: nameController,
+                    textAlignVertical: TextAlignVertical.center,
+                    decoration: InputDecoration(
+                      hintText: 'Nama',
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                  ),
                   SizedBox(height: 20),
                   TextFormField(
                     validator: (String value) {
@@ -93,34 +102,14 @@ class _LoginState extends State<Login> {
                   ),
                   SizedBox(height: 20),
                   CustomButton(
-                    title: 'Login',
+                    title: 'Register',
                     color: Colors.amber,
                     onTap: () {
                       if (_formKey.currentState.validate()) {
-                        login(usernameController.text, passController.text)
-                            .then((value) => loginInfo = value)
-                            .whenComplete(() {
-                          print(loginInfo.role.roleName);
-                          print(loginInfo.pages.map((e) => e.pageName).toList());
-                          print(loginInfo.pages.map((e) => e.pageGroup).toList());
-                          setUserInfoPreference(
-                            loginInfo.name,
-                            loginInfo.token,
-                            loginInfo.role.roleName,
-                            loginInfo.pages.map((e) => e.pageName).toList(),
-                            loginInfo.pages.map((e) => e.pageGroup).toList(),
-                          ).then((value) => Center(child: CircularProgressIndicator())).whenComplete(() {
-                            Get.offAll(Body());
-                          });
-                        });
+                        register(nameController.text, usernameController.text, passController.text);
                       }
                     },
                   ),
-                  SizedBox(height: 20),
-                  FlatButton(
-                    onPressed: () => Get.to(Register()),
-                    child: Text('Register', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
-                  )
                 ],
               ),
             ),
@@ -130,45 +119,41 @@ class _LoginState extends State<Login> {
     );
   }
 
-  LoginInfo loginInfo;
-
-  List<Map<String, dynamic>> selectedPages = [];
-
-  Future login(String username, String password) async {
+  Future register(String name, String username, String password) async {
     try {
       final response = await Dio().post(
-        "http://10.0.2.2:8000/api/login",
-        options: Options(contentType: "application/json"),
+        "http://10.0.2.2:8000/api/admin/user-register",
+        options: Options(headers: {"Accept": "application/json"}),
         queryParameters: {
+          'name': name,
           'username': username,
           'password': password,
         },
       );
       if (response.statusCode == 200) {
-        final login = loginInfoFromJson(jsonEncode(response.data['data']));
-        return login;
-        // selectedPages.clear();
-        // // pages.forEach((element) {
-        // //   selectedPages.add(element);
-        // //   print(selectedPages);
-        // // });
+        print(response.data);
+        Flushbar(
+          message: "Registrasi berhasil",
+          duration: Duration(seconds: 3),
+        )..show(context).then((value) => Get.to(Login()));
       }
     } on DioError catch (e) {
-      Flushbar(
-        title: "Gagal login",
-        message: e.message,
-        duration: Duration(seconds: 3),
-        backgroundColor: Colors.red,
-      )..show(context);
+      print(e.response.data['message']);
+      if (e.response.data['message'].toString().contains('SQLSTATE')) {
+        Flushbar(
+          title: "Gagal register",
+          message: "Username $username sudah terdaftar",
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        )..show(context);
+      } else {
+        Flushbar(
+          title: "Gagal register",
+          message: e.response.statusMessage,
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        )..show(context);
+      }
     }
-  }
-
-  Future setUserInfoPreference(name, token, role, pageList, pageCategoryList) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('name', name);
-    prefs.setString('token', token);
-    prefs.setString('role', role);
-    prefs.setStringList('pageList', pageList);
-    prefs.setStringList('pageCategoryList', pageCategoryList);
   }
 }

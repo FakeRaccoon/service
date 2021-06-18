@@ -1,11 +1,16 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:flushbar/flushbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:service/componen/custom_button.dart';
-import 'package:service/componen/custom_text_field.dart';
 import 'package:service/sercvices/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReceiptInput extends StatefulWidget {
   @override
@@ -17,29 +22,65 @@ class _ReceiptInputState extends State<ReceiptInput> {
 
   DateTime selectedDate = DateTime.now();
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
-        context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selectedDate)
-      setState(() {
-        selectedDate = picked;
-      });
-  }
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
     FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    isButtonVisible = true;
-    card2Visible = false;
-    tfEnable1 = true;
-    API.getForm(1);
+    timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
+      setState(() {});
+    });
   }
 
-  var customerController = TextEditingController();
-  var itemController = TextEditingController();
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  Timer timer;
+
+  SharedPreferences sharedPreferences;
+
+  Future formCreate(customer, item) async {
+    var url = 'http://10.0.2.2:8000/api/form/create';
+    sharedPreferences = await SharedPreferences.getInstance();
+    final token = sharedPreferences.getString('token');
+    try {
+      final response = await Dio().post(
+        url,
+        options: Options(headers: {"Authorization": "Bearer $token"}),
+        queryParameters: {
+          "customer": customer,
+          "item": item,
+          "status": 1,
+          "receipt_date": DateTime.now().toString(),
+        },
+      );
+      if (response.statusCode == 200) {
+        customerController.clear();
+        itemController.clear();
+        Flushbar(
+          title: "Berhasil",
+          message: response.data['message'],
+          duration: Duration(seconds: 3),
+        )..show(context);
+      }
+    } on DioError catch (e) {
+      Flushbar(
+        title: "Gagal",
+        message: e.response.data['message'],
+        duration: Duration(seconds: 3),
+      )..show(context);
+    }
+  }
+
+  TextEditingController customerController = TextEditingController();
+  TextEditingController phoneNumberController = TextEditingController();
+  TextEditingController itemController = TextEditingController();
+
+  bool checkValue = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,25 +88,45 @@ class _ReceiptInputState extends State<ReceiptInput> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.black),
-        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          color: Colors.black,
+          icon: Icon(Icons.clear),
+          onPressed: () {
+            Get.back();
+            timer.cancel();
+          },
+        ),
+        backgroundColor: Color.fromRGBO(227, 227, 225, 1),
         elevation: 0,
-        title:
-            Text('Receipt Input', style: GoogleFonts.sourceSansPro(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Center(
+          child: Text(
+            'Receipt Input',
+            style: GoogleFonts.sourceSansPro(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () {}, child: Text('Done')),
+        ],
       ),
       body: Stack(
         children: [
           Container(
-            color: Colors.amber,
+            color: Color.fromRGBO(227, 227, 225, 1),
             height: mediaQ.height * .25,
             width: mediaQ.width,
           ),
           SingleChildScrollView(
             child: SafeArea(
-              child: Column(
-                children: [
-                  customCard(),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  children: [
+                    customCard(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -74,17 +135,12 @@ class _ReceiptInputState extends State<ReceiptInput> {
     );
   }
 
-  bool isButtonVisible;
-  bool card2Visible;
-  bool tfEnable1;
-
   Widget customCard() {
     return Form(
       key: _key,
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         elevation: 4,
-        margin: EdgeInsets.symmetric(horizontal: 15),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -110,10 +166,10 @@ class _ReceiptInputState extends State<ReceiptInput> {
                 ],
               ),
               SizedBox(height: 20),
-              Text(
-                'CUSTOMER',
-                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
-              ),
+              Divider(thickness: 1),
+              SizedBox(height: 20),
+              Text('Customer Info', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
+              SizedBox(height: 10),
               TextFormField(
                 validator: (value) {
                   if (value.isEmpty) {
@@ -122,13 +178,23 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   return null;
                 },
                 controller: customerController,
-                decoration: InputDecoration(),
+                decoration: InputDecoration(labelText: 'Nama customer'),
               ),
               SizedBox(height: 20),
-              Text(
-                'BARANG',
-                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
+              TextFormField(
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Isi nomor telfon customer!';
+                  }
+                  return null;
+                },
+                controller: phoneNumberController,
+                decoration: InputDecoration(labelText: 'Nomor telfon'),
+                keyboardType: TextInputType.number,
               ),
+              SizedBox(height: 20),
+              Text('Item Details', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
+              SizedBox(height: 10),
               TextFormField(
                 validator: (value) {
                   if (value.isEmpty) {
@@ -137,79 +203,50 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   return null;
                 },
                 controller: itemController,
-                decoration: InputDecoration(),
+                decoration: InputDecoration(labelText: 'Nama barang'),
               ),
-              Column(
+              SizedBox(height: 30),
+              Row(
                 children: [
-                  SizedBox(height: 20),
-                  CustomButton(
-                    onTap: () {
-                      if (_key.currentState.validate()) {
-                        API.formCreate(customerController.text, itemController.text).whenComplete(() {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Data berhasil disimpan'),
-                          ));
-                          customerController.clear();
-                          itemController.clear();
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      activeColor: Colors.black,
+                      value: checkValue,
+                      onChanged: (newValue) {
+                        setState(() {
+                          checkValue = newValue;
                         });
-                      }
-                    },
-                    color: Colors.amber,
-                    title: 'Simpan',
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text('Terima '),
+                  InkWell(
+                    onTap: () {},
+                    child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
+              SizedBox(height: 10),
+              // SizedBox(
+              //   width: Get.width,
+              //   child: ElevatedButton(
+              //     style: ElevatedButton.styleFrom(
+              //       primary: Color.fromRGBO(80, 80, 80, 1),
+              //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              //     ),
+              //     onPressed: () {
+              //       if (_key.currentState.validate()) {
+              //         formCreate(customerController.text, itemController.text);
+              //       }
+              //     },
+              //     child: Text('Simpan'),
+              //   ),
+              // ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Card customCard2(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      margin: EdgeInsets.all(15),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ESTIMASI BIAYA',
-              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-            CustomTextField(
-              readOnly: false,
-              keyboardType: TextInputType.number,
-              icon: Icon(Icons.monetization_on),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'ESTIMASI TANGGAL SELESAI',
-              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-            CustomTextField(
-              onTap: () => _selectDate(context),
-              readOnly: true,
-              icon: Icon(Icons.date_range),
-            ),
-            SizedBox(height: 20),
-            CustomButton(
-              onTap: () {
-                if (customerController.text.isNotEmpty && itemController.text.isNotEmpty) {
-                  setState(() {
-                    isButtonVisible = false;
-                    card2Visible = true;
-                    tfEnable1 = false;
-                  });
-                }
-              },
-              color: customerController.text.isNotEmpty && itemController.text.isNotEmpty ? Colors.amber : Colors.grey,
-              title: 'Simpan',
-            ),
-          ],
         ),
       ),
     );
