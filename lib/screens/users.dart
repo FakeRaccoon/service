@@ -16,28 +16,12 @@ class _UsersState extends State<Users> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    getUserInfo();
-  }
-
-  getUserInfo() async {
-    sharedPreferences = await SharedPreferences.getInstance();
-    final username = sharedPreferences.getString('name');
-    final role = sharedPreferences.getString('role');
-    if (username != null) {
-      setState(() {
-        name = username;
-        userRole = role;
-      });
-      print(name);
-    } else {
-      Get.offAll(Root());
-    }
   }
 
   Future logout() async {
     sharedPreferences = await SharedPreferences.getInstance();
     sharedPreferences.clear();
-    sharedPreferences.commit();
+    Get.offAll(() => Root());
   }
 
   String name;
@@ -57,11 +41,6 @@ class _UsersState extends State<Users> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Text(
-            //   'User Info',
-            //   style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
-            // ),
-            // SizedBox(height: 10),
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               elevation: 4,
@@ -97,7 +76,7 @@ class _UsersState extends State<Users> {
             ),
             SizedBox(height: 20),
             CustomButton(
-              onTap: () => logout().then((value) => getUserInfo()),
+              onTap: () => logout(),
               color: Colors.amber,
               title: 'Konfirmasi',
             )

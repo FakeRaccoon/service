@@ -1,14 +1,12 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:flushbar/flushbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:service/componen/custom_button.dart';
+import 'package:service/home.dart';
 import 'package:service/sercvices/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,12 +20,23 @@ class _ReceiptInputState extends State<ReceiptInput> {
 
   DateTime selectedDate = DateTime.now();
 
+  Timer timer;
+
+  SharedPreferences sharedPreferences;
+
+  TextEditingController customerController = TextEditingController();
+  TextEditingController phoneNumberController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
+  TextEditingController itemController = TextEditingController();
+  TextEditingController problemController = TextEditingController();
+
+  bool checkValue = false;
+
+  TextStyle header = GoogleFonts.sourceSansPro();
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
-    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
     timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
       setState(() {});
     });
@@ -35,56 +44,12 @@ class _ReceiptInputState extends State<ReceiptInput> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    timer.cancel();
     super.dispose();
   }
 
-  Timer timer;
-
-  SharedPreferences sharedPreferences;
-
-  Future formCreate(customer, item) async {
-    var url = 'http://10.0.2.2:8000/api/form/create';
-    sharedPreferences = await SharedPreferences.getInstance();
-    final token = sharedPreferences.getString('token');
-    try {
-      final response = await Dio().post(
-        url,
-        options: Options(headers: {"Authorization": "Bearer $token"}),
-        queryParameters: {
-          "customer": customer,
-          "item": item,
-          "status": 1,
-          "receipt_date": DateTime.now().toString(),
-        },
-      );
-      if (response.statusCode == 200) {
-        customerController.clear();
-        itemController.clear();
-        Flushbar(
-          title: "Berhasil",
-          message: response.data['message'],
-          duration: Duration(seconds: 3),
-        )..show(context);
-      }
-    } on DioError catch (e) {
-      Flushbar(
-        title: "Gagal",
-        message: e.response.data['message'],
-        duration: Duration(seconds: 3),
-      )..show(context);
-    }
-  }
-
-  TextEditingController customerController = TextEditingController();
-  TextEditingController phoneNumberController = TextEditingController();
-  TextEditingController itemController = TextEditingController();
-
-  bool checkValue = false;
-
   @override
   Widget build(BuildContext context) {
-    var mediaQ = MediaQuery.of(context).size;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -93,14 +58,13 @@ class _ReceiptInputState extends State<ReceiptInput> {
           icon: Icon(Icons.clear),
           onPressed: () {
             Get.back();
-            timer.cancel();
           },
         ),
         backgroundColor: Color.fromRGBO(227, 227, 225, 1),
         elevation: 0,
         title: Center(
           child: Text(
-            'Receipt Input',
+            'Tanda Terima',
             style: GoogleFonts.sourceSansPro(
               color: Colors.black,
               fontWeight: FontWeight.bold,
@@ -108,20 +72,66 @@ class _ReceiptInputState extends State<ReceiptInput> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () {}, child: Text('Done')),
+          TextButton(
+              onPressed: () {
+                if (_key.currentState.validate() && checkValue == true) {
+                  APIService().createOrder(itemController.text, problemController.text).then((value) {
+                    APIService()
+                        .createCustomer(
+                      value['data']['id'],
+                      customerController.text,
+                      addressController.text,
+                      phoneNumberController.text,
+                    )
+                        .then((value) {
+                      Get.offAll(() => Home());
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Berhasil'),
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }, onError: (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(e),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: Colors.red,
+                      ));
+                    });
+                  }, onError: (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(e),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.red,
+                    ));
+                  });
+                } else if (_key.currentState.validate() && checkValue == false) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Terima Syarat dan Ketentuan'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Lengkapi data'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                  ));
+                }
+              },
+              child: Text('Selesai', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold))),
+          SizedBox(width: 5),
         ],
       ),
       body: Stack(
         children: [
           Container(
             color: Color.fromRGBO(227, 227, 225, 1),
-            height: mediaQ.height * .25,
-            width: mediaQ.width,
+            height: Get.height * .25,
+            width: Get.width,
           ),
           SingleChildScrollView(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Column(
                   children: [
                     customCard(),
@@ -139,8 +149,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
     return Form(
       key: _key,
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -165,11 +174,20 @@ class _ReceiptInputState extends State<ReceiptInput> {
                       style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
                 ],
               ),
-              SizedBox(height: 20),
-              Divider(thickness: 1),
-              SizedBox(height: 20),
-              Text('Customer Info', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
               SizedBox(height: 10),
+              Divider(thickness: 1),
+              // ListTile(
+              //   contentPadding: EdgeInsets.zero,
+              //   title: Row(
+              //     children: [
+              //       Icon(Icons.date_range_rounded, color: Colors.grey[600]),
+              //       SizedBox(width: 5),
+              //       Text(DateFormat('d MMMM y').format(DateTime.now()) ?? '-', style: header),
+              //     ],
+              //   ),
+              // ),
+              SizedBox(height: 10),
+              Text('Detail', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
               TextFormField(
                 validator: (value) {
                   if (value.isEmpty) {
@@ -178,9 +196,9 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   return null;
                 },
                 controller: customerController,
-                decoration: InputDecoration(labelText: 'Nama customer'),
+                decoration: InputDecoration(labelText: 'Nama Customer'),
               ),
-              SizedBox(height: 20),
+              // SizedBox(height: 20),
               TextFormField(
                 validator: (value) {
                   if (value.isEmpty) {
@@ -189,11 +207,21 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   return null;
                 },
                 controller: phoneNumberController,
-                decoration: InputDecoration(labelText: 'Nomor telfon'),
+                decoration: InputDecoration(labelText: 'Nomor Telfon'),
                 keyboardType: TextInputType.number,
               ),
-              SizedBox(height: 20),
-              Text('Item Details', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
+              // SizedBox(height: 20),
+              TextFormField(
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Isi alamat customer!';
+                  }
+                  return null;
+                },
+                controller: addressController,
+                decoration: InputDecoration(labelText: 'Alamat'),
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 10),
               TextFormField(
                 validator: (value) {
@@ -203,7 +231,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   return null;
                 },
                 controller: itemController,
-                decoration: InputDecoration(labelText: 'Nama barang'),
+                decoration: InputDecoration(labelText: 'Nama Barang'),
               ),
               SizedBox(height: 30),
               Row(
@@ -235,12 +263,10 @@ class _ReceiptInputState extends State<ReceiptInput> {
               //   child: ElevatedButton(
               //     style: ElevatedButton.styleFrom(
               //       primary: Color.fromRGBO(80, 80, 80, 1),
-              //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               //     ),
               //     onPressed: () {
-              //       if (_key.currentState.validate()) {
-              //         formCreate(customerController.text, itemController.text);
-              //       }
+              //       if (_key.currentState.validate()) {}
               //     },
               //     child: Text('Simpan'),
               //   ),

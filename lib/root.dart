@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:service/body.dart';
+import 'package:service/home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
@@ -21,13 +23,9 @@ class _RootState extends State<Root> {
   checkLoginStatus() async {
     sharedPreferences = await SharedPreferences.getInstance();
     if (sharedPreferences.getString("token") == null) {
-      Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (BuildContext context) => Login()),
-          (Route<dynamic> route) => false);
+      Get.offAll(() => Login());
     } else {
-      Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (BuildContext context) => Body()),
-          (Route<dynamic> route) => false);
+      Get.offAll(() => Home());
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:service/home.dart';
+import 'package:service/login.dart';
 import 'package:service/root.dart';
 
 void main() async {
@@ -12,10 +13,12 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      builder: (context, child) {
+        return ScrollConfiguration(behavior: MyBehavior(), child: child);
+      },
       theme: ThemeData(
         colorScheme: ColorScheme.light(primary: Colors.grey[900]),
         primaryColor: Colors.black,
@@ -25,7 +28,14 @@ class MyApp extends StatelessWidget {
         textSelectionColor: Colors.grey,
       ),
       debugShowCheckedModeBanner: false,
-      home: Home(),
+      home: Root(),
     );
+  }
+}
+
+class MyBehavior extends ScrollBehavior {
+  @override
+  Widget buildViewportChrome(BuildContext context, Widget child, AxisDirection axisDirection) {
+    return child;
   }
 }

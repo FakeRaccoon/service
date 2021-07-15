@@ -1,34 +1,142 @@
 import 'dart:convert';
+import 'dart:ffi';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
-import 'package:service/models/form.dart';
-import 'package:service/models/item_model.dart';
+import 'package:service/models/order-model.dart';
 import 'package:service/models/parts_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class API {
+const APIUrl = 'http://10.0.2.2:8000';
+
+class APIService {
   static SharedPreferences sharedPreferences;
-  static Future getForm(status) async {
-    sharedPreferences = await SharedPreferences.getInstance();
-    final token = sharedPreferences.getString('token');
-    final url = 'http://10.0.2.2:8000/api/form';
+
+  var options = BaseOptions(
+    baseUrl: '$APIUrl/api',
+    connectTimeout: 10 * 1000,
+    receiveTimeout: 10 * 1000,
+    sendTimeout: 10 * 1000,
+    receiveDataWhenStatusError: true,
+  );
+
+  Future login(username, password) async {
+    final url = '$APIUrl/api/login';
     try {
-      final response = await Dio().get(
+      final response = await Dio().post(
         url,
-        options: Options(headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"}),
-        queryParameters: {"status": status},
+        data: {"username": username, 'password': password},
       );
       if (response.statusCode == 200) {
-        final form = formResultFromJson(jsonEncode(response.data["result"]));
-        return form;
+        return response.data;
       }
     } on DioError catch (e) {
-      print(e.response.data);
+      return e.response.data;
     }
   }
 
-  static Future formTotal(id, total) async {
+  Future logout() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    final token = sharedPreferences.getString('token');
+    try {
+      final url = '$APIUrl/api/logout';
+      final response = await Dio().post(url, options: Options(headers: {'Authorization': 'Bearer $token'}));
+      if (response.statusCode == 200) {
+        print(response.data);
+        return response.data;
+      }
+    } on DioError catch (e) {
+      print(e.response.data);
+      return e.response.data;
+    }
+  }
+
+  Future getOrder<OrderModel>(page, status) async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    final token = sharedPreferences.getString('token');
+    Dio dio = Dio(options);
+    try {
+      final response = await dio.post(
+        'http://10.0.2.2:8000/api/get-order?page=$page',
+        options: Options(headers: {"Authorization": "Bearer $token"}),
+        data: {"status": null},
+      );
+      print(response.data);
+      return orderModelFromJson(jsonEncode(response.data));
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.sendTimeout ||
+          e.type == DioErrorType.receiveTimeout) {
+        throw 'Connection Timeout';
+      } else if (e.type == DioErrorType.other) {
+        throw 'No Internet';
+      } else {
+        print(e.response.data);
+        throw e.response.statusMessage;
+      }
+    }
+  }
+
+  Future createOrder(item, problem) async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    final token = sharedPreferences.getString('token');
+    final url = '$APIUrl/api/order-create';
+    Dio dio = Dio(options);
+    try {
+      final response = await dio.post(url,
+          options: Options(
+            headers: {"Authorization": "Bearer $token"},
+          ),
+          data: {
+            "status": 0,
+            "item": item,
+            "problem": problem,
+          });
+      return response.data;
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.sendTimeout ||
+          e.type == DioErrorType.receiveTimeout) {
+        throw 'Connection Timeout';
+      } else if (e.type == DioErrorType.other) {
+        throw 'No Internet';
+      } else {
+        throw e.response.statusMessage;
+      }
+    }
+  }
+
+  Future createCustomer(orderId, name, address, contact) async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    Dio dio = Dio(options);
+    final token = sharedPreferences.getString('token');
+    final url = '$APIUrl/api/customer-create';
+    try {
+      final response = await dio.post(
+        url,
+        options: Options(headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"}),
+        data: {
+          "order_id": orderId,
+          "name": name,
+          "address": address,
+          "contact": contact,
+        },
+      );
+      return response.data;
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.sendTimeout ||
+          e.type == DioErrorType.receiveTimeout) {
+        throw 'Connection Timeout';
+      } else if (e.type == DioErrorType.other) {
+        throw 'No Internet';
+      } else {
+        throw e.response.statusMessage;
+      }
+    }
+  }
+
+  Future formTotal(id, total) async {
     sharedPreferences = await SharedPreferences.getInstance();
     final token = sharedPreferences.getString('token');
     try {
@@ -64,10 +172,7 @@ class API {
   static Future getItems() async {
     var url = 'http://10.0.2.2:8000/api/items';
     final response = await Dio().get(url);
-    if (response.statusCode == 200) {
-      final List items = itemResultFromJson(response.data);
-      return items;
-    }
+    if (response.statusCode == 200) {}
   }
 
   static Future partsUpdate(id, price) async {

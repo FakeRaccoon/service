@@ -1,13 +1,9 @@
-import 'package:expandable/expandable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:service/componen/custom_button.dart';
-import 'package:service/models/form.dart';
+import 'package:service/models/order-model.dart';
 import 'package:service/sercvices/api.dart';
 
 class ServiceProposal extends StatefulWidget {
@@ -18,14 +14,167 @@ class ServiceProposal extends StatefulWidget {
 }
 
 class _ServiceProposalState extends State<ServiceProposal> {
+  final key = GlobalKey();
+
+  bool isLoading = true;
+  OrderModel order;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.black),
-        title: Text('Service Proposal', style: GoogleFonts.sourceSansPro(color: Colors.black),),
-        backgroundColor: Colors.transparent,
+        title: Text(
+          'Service Proposal',
+          style: GoogleFonts.sourceSansPro(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
+      ),
+      body: FutureBuilder(
+        future: APIService().getOrder(1, null),
+        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data == null) {
+              return Center(
+                child: Text('Data Kosong'),
+              );
+            }
+            return OrderList(order: snapshot.data, key: key);
+          }
+          return Center(child: CircularProgressIndicator());
+        },
+      ),
+    );
+  }
+}
+
+class OrderList extends StatefulWidget {
+  final OrderModel order;
+  const OrderList({Key key, this.order}) : super(key: key);
+
+  @override
+  _OrderListState createState() => _OrderListState();
+}
+
+class _OrderListState extends State<OrderList> {
+  List<Datum> data;
+
+  int currentPage = 1;
+  bool hasMore = false;
+
+  ScrollController scrollController = ScrollController();
+
+  TextStyle header = GoogleFonts.sourceSansPro();
+  TextStyle content = GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold);
+
+  Future refresh() async {
+    APIService().getOrder(1, null).then((value) {
+      OrderModel value;
+      setState(() {
+        data = value.data;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    data = widget.order.data;
+    scrollController.addListener(() {
+      if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
+        APIService().getOrder(currentPage + 1, null).then((value) {
+          if (value.data.isEmpty) {
+            setState(() {
+              hasMore = false;
+            });
+          } else {
+            setState(() {
+              currentPage++;
+              hasMore = true;
+              data.addAll(value.data);
+            });
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    scrollController.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: refresh,
+      child: ListView.builder(
+        controller: scrollController,
+        shrinkWrap: true,
+        itemCount: hasMore ? data.length + 1 : data.length,
+        itemBuilder: (BuildContext context, int index) {
+          if (index == data.length) {
+            return _buildProgressIndicator();
+          }
+          return Card(
+            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(data[index].item ?? '-', style: content),
+                    subtitle: Row(
+                      children: [
+                        Icon(Icons.date_range_rounded, color: Colors.grey[600]),
+                        SizedBox(width: 5),
+                        Text(DateFormat('d MMMM y').format(data[index].createdAt) ?? '-', style: header),
+                      ],
+                    ),
+                    trailing: Text(data[index].customer.name ?? '-', style: header),
+                  ),
+                  // Text(data[index].item ?? '-', style: content),
+                  // SizedBox(height: 10),
+                  // Row(
+                  //   children: [
+                  //     Icon(Icons.date_range_rounded),
+                  //     SizedBox(width: 5),
+                  //     Text(DateFormat('d MMMM y').format(data[index].createdAt) ?? '-', style: header),
+                  //   ],
+                  // ),
+                  // SizedBox(height: 10),
+                  // Text('Kontak', style: header),
+                  // Text('${data[index].customer.contact}' ?? '-', style: content),
+                  // SizedBox(height: 10),
+                  // Text('Barang', style: header),
+                  // Text(data[index].item ?? '-', style: content),
+                  // SizedBox(height: 10),
+                  // Text('Masalah Mesin', style: header),
+                  // Text(data[index].problem ?? '-', style: content),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return new Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: new Center(
+        child: new CircularProgressIndicator(),
       ),
     );
   }
@@ -37,32 +186,22 @@ class ServiceProposalDetail extends StatefulWidget {
 }
 
 class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    FlutterStatusbarcolor.setStatusBarColor(Colors.transparent);
-    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
-    // formFuture = API.getForm(3);
-  }
-
-  Future formFuture;
-
   Future onRefresh() async {
-    formFuture = API.getForm(3);
     setState(() {});
   }
 
   bool isChecked = false;
-  List<FormResult> form = [];
-
-  int part1 = 1;
-
   bool checkValue = false;
+
+  NumberFormat currency = NumberFormat.decimalPattern();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    var currency = NumberFormat.decimalPattern();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(

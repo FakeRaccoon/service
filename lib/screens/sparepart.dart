@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:service/componen/custom_button.dart';
 import 'package:service/componen/custom_text_field.dart';
-import 'package:service/models/form.dart';
 import 'package:service/sercvices/api.dart';
 
 class SparePart extends StatefulWidget {
@@ -27,31 +26,30 @@ class _SparePartState extends State<SparePart> {
   Future formFuture;
 
   Future getTotal(index) async {
-    API.getForm(2).then((value) => form = value).whenComplete(() {
-      setState(() {});
-      sumList.clear();
-      form[index].parts.toList().forEach((element) {
-        int sum = element.qty * element.price;
-        sumList.add(sum);
-      });
-      int sumSum = sumList.fold(0, (p, e) => p + e);
-      print(sumSum);
-      if (sumSum != 0) {
-        API.formTotal(form[index].id, sumSum).whenComplete(() {
-          formFuture = API.getForm(2);
-          setState(() {});
-        });
-      }
-    });
+    // APIService.getOrder(2).then((value) => form = value).whenComplete(() {
+    //   setState(() {});
+    //   sumList.clear();
+    //   form[index].parts.toList().forEach((element) {
+    //     int sum = element.qty * element.price;
+    //     sumList.add(sum);
+    //   });
+    //   int sumSum = sumList.fold(0, (p, e) => p + e);
+    //   print(sumSum);
+    //   if (sumSum != 0) {
+    //     // APIService.formTotal(form[index].id, sumSum).whenComplete(() {
+    //     //   formFuture = APIService.getOrder(2);
+    //     //   setState(() {});
+    //     // });
+    //   }
+    // });
   }
 
   onRefresh() async {
-    formFuture = API.getForm(2);
+    // formFuture = APIService.getOrder(2);
     setState(() {});
   }
 
   var feeController = TextEditingController();
-  List<FormResult> form = [];
   List sumList = [];
 
   @override
@@ -151,7 +149,7 @@ class _SparePartState extends State<SparePart> {
                     title: 'Konfirmasi',
                     color: Colors.amber,
                     onTap: () {
-                      API.formStatusUpdate(snapshot.data[index].id, 3).whenComplete(() => onRefresh());
+                      APIService.formStatusUpdate(snapshot.data[index].id, 3).whenComplete(() => onRefresh());
                     },
                   )
                 ],
@@ -243,7 +241,7 @@ class _SparePartState extends State<SparePart> {
                 onTap: () {
                   if (feeController.text.isNotEmpty) {
                     var q = int.parse(feeController.text.replaceAll(',', ''));
-                    API.partsUpdate(snapshot.data[index].parts[idx].id, q).whenComplete(() {
+                    APIService.partsUpdate(snapshot.data[index].parts[idx].id, q).whenComplete(() {
                       getTotal(index);
                     });
                     Navigator.pop(context);

@@ -2,13 +2,16 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flushbar/flushbar.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:service/body.dart';
 import 'package:service/componen/custom_button.dart';
+import 'package:service/home.dart';
 import 'package:service/models/LoginInfo.dart';
 import 'package:service/screens/Register.dart';
+import 'package:service/sercvices/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
@@ -19,11 +22,14 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
 
+  TextEditingController usernameController = TextEditingController();
+  TextEditingController passController = TextEditingController();
+
+  SharedPreferences sharedPreferences;
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    isObscured = true;
   }
 
   bool isObscured = true;
@@ -33,16 +39,14 @@ class _LoginState extends State<Login> {
     });
   }
 
-  TextEditingController usernameController = TextEditingController();
-  TextEditingController passController = TextEditingController();
-
-  String externalIds;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        backwardsCompatibility: false,
+        systemOverlayStyle:
+            SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.dark),
         elevation: 0,
       ),
       body: Form(
@@ -51,7 +55,7 @@ class _LoginState extends State<Login> {
           child: Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             margin: EdgeInsets.all(20),
-            elevation: 4,
+            elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -92,35 +96,38 @@ class _LoginState extends State<Login> {
                         )),
                   ),
                   SizedBox(height: 20),
-                  CustomButton(
-                    title: 'Login',
-                    color: Colors.amber,
-                    onTap: () {
-                      if (_formKey.currentState.validate()) {
-                        login(usernameController.text, passController.text)
-                            .then((value) => loginInfo = value)
-                            .whenComplete(() {
-                          print(loginInfo.role.roleName);
-                          print(loginInfo.pages.map((e) => e.pageName).toList());
-                          print(loginInfo.pages.map((e) => e.pageGroup).toList());
-                          setUserInfoPreference(
-                            loginInfo.name,
-                            loginInfo.token,
-                            loginInfo.role.roleName,
-                            loginInfo.pages.map((e) => e.pageName).toList(),
-                            loginInfo.pages.map((e) => e.pageGroup).toList(),
-                          ).then((value) => Center(child: CircularProgressIndicator())).whenComplete(() {
-                            Get.offAll(Body());
+                  SizedBox(
+                    width: Get.width,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        if (_formKey.currentState.validate()) {
+                          APIService().login(usernameController.text, passController.text).then((value) {
+                            if (value['status'] == 200) {
+                              setUserInfoPreference(
+                                value['result']['name'],
+                                value['result']['username'],
+                                value['token'],
+                                value['result']['role'],
+                              ).whenComplete(() => Get.offAll(() => Home()));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Login gagal'),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           });
-                        });
-                      }
-                    },
+                        }
+                      },
+                      child: Text('Login'),
+                    ),
                   ),
                   SizedBox(height: 20),
-                  FlatButton(
-                    onPressed: () => Get.to(Register()),
-                    child: Text('Register', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
-                  )
                 ],
               ),
             ),
@@ -130,45 +137,11 @@ class _LoginState extends State<Login> {
     );
   }
 
-  LoginInfo loginInfo;
-
-  List<Map<String, dynamic>> selectedPages = [];
-
-  Future login(String username, String password) async {
-    try {
-      final response = await Dio().post(
-        "http://10.0.2.2:8000/api/login",
-        options: Options(contentType: "application/json"),
-        queryParameters: {
-          'username': username,
-          'password': password,
-        },
-      );
-      if (response.statusCode == 200) {
-        final login = loginInfoFromJson(jsonEncode(response.data['data']));
-        return login;
-        // selectedPages.clear();
-        // // pages.forEach((element) {
-        // //   selectedPages.add(element);
-        // //   print(selectedPages);
-        // // });
-      }
-    } on DioError catch (e) {
-      Flushbar(
-        title: "Gagal login",
-        message: e.message,
-        duration: Duration(seconds: 3),
-        backgroundColor: Colors.red,
-      )..show(context);
-    }
-  }
-
-  Future setUserInfoPreference(name, token, role, pageList, pageCategoryList) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('name', name);
-    prefs.setString('token', token);
-    prefs.setString('role', role);
-    prefs.setStringList('pageList', pageList);
-    prefs.setStringList('pageCategoryList', pageCategoryList);
+  Future setUserInfoPreference(name, username, token, role) async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    sharedPreferences.setString('name', name);
+    sharedPreferences.setString('username', username);
+    sharedPreferences.setString('token', token);
+    sharedPreferences.setString('role', role);
   }
 }
