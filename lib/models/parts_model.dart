@@ -20,14 +20,14 @@ class PartsResult {
     this.updatedAt,
   });
 
-  int id;
-  int formId;
-  String name;
-  int qty;
+  int? id;
+  int? formId;
+  String? name;
+  int? qty;
   dynamic price;
-  bool selected;
-  DateTime createdAt;
-  DateTime updatedAt;
+  bool? selected;
+  DateTime? createdAt;
+  DateTime? updatedAt;
 
   factory PartsResult.fromJson(Map<String, dynamic> json) => PartsResult(
     id: json["id"],
@@ -47,7 +47,7 @@ class PartsResult {
     "qty": qty,
     "price": price,
     "selected": selected,
-    "created_at": createdAt.toIso8601String(),
-    "updated_at": updatedAt.toIso8601String(),
+    "created_at": createdAt!.toIso8601String(),
+    "updated_at": updatedAt!.toIso8601String(),
   };
 }

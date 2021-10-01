@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:service/body.dart';
-import 'package:service/home.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'login.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:service/models/user-model.dart';
+import 'package:service/screens/home.dart';
+import 'package:service/screens/responsive-login-page.dart';
+import 'package:service/services/api.dart';
 
 class Root extends StatefulWidget {
   @override
@@ -12,30 +11,21 @@ class Root extends StatefulWidget {
 }
 
 class _RootState extends State<Root> {
-  SharedPreferences sharedPreferences;
-
-  @override
-  void initState() {
-    super.initState();
-    checkLoginStatus();
-  }
-
-  checkLoginStatus() async {
-    sharedPreferences = await SharedPreferences.getInstance();
-    if (sharedPreferences.getString("token") == null) {
-      Get.offAll(() => Login());
-    } else {
-      Get.offAll(() => Home());
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+    // return Center(child: CircularProgressIndicator());
+    return Scaffold(
+      body: FutureBuilder(
+        future: APIService().userDetail(),
+        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+          if (snapshot.hasData) {
+            return Home();
+          } else if (snapshot.hasError) {
+            return ResponsiveLoginPage();
+          }
+          return Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }

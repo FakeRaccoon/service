@@ -1,10 +1,5 @@
-import 'package:dio/dio.dart';
-import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:service/componen/custom_button.dart';
-import 'package:service/login.dart';
 
 class Register extends StatefulWidget {
   @override
@@ -53,8 +48,8 @@ class _RegisterState extends State<Register> {
                   Text('Register', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 22)),
                   SizedBox(height: 20),
                   TextFormField(
-                    validator: (String value) {
-                      if (value.isEmpty) {
+                    validator: (String? value) {
+                      if (value!.isEmpty) {
                         return 'nama tidak boleh kosong';
                       }
                       return null;
@@ -68,8 +63,8 @@ class _RegisterState extends State<Register> {
                   ),
                   SizedBox(height: 20),
                   TextFormField(
-                    validator: (String value) {
-                      if (value.isEmpty) {
+                    validator: (String? value) {
+                      if (value!.isEmpty) {
                         return 'username tidak boleh kosong';
                       }
                       return null;
@@ -83,8 +78,8 @@ class _RegisterState extends State<Register> {
                   ),
                   SizedBox(height: 20),
                   TextFormField(
-                    validator: (String value) {
-                      if (value.isEmpty) {
+                    validator: (String? value) {
+                      if (value!.isEmpty) {
                         return 'password tidak boleh kosong';
                       }
                       return null;
@@ -101,15 +96,6 @@ class _RegisterState extends State<Register> {
                         )),
                   ),
                   SizedBox(height: 20),
-                  CustomButton(
-                    title: 'Register',
-                    color: Colors.amber,
-                    onTap: () {
-                      if (_formKey.currentState.validate()) {
-                        register(nameController.text, usernameController.text, passController.text);
-                      }
-                    },
-                  ),
                 ],
               ),
             ),
@@ -117,43 +103,5 @@ class _RegisterState extends State<Register> {
         ),
       ),
     );
-  }
-
-  Future register(String name, String username, String password) async {
-    try {
-      final response = await Dio().post(
-        "http://10.0.2.2:8000/api/admin/user-register",
-        options: Options(headers: {"Accept": "application/json"}),
-        queryParameters: {
-          'name': name,
-          'username': username,
-          'password': password,
-        },
-      );
-      if (response.statusCode == 200) {
-        print(response.data);
-        Flushbar(
-          message: "Registrasi berhasil",
-          duration: Duration(seconds: 3),
-        )..show(context).then((value) => Get.to(Login()));
-      }
-    } on DioError catch (e) {
-      print(e.response.data['message']);
-      if (e.response.data['message'].toString().contains('SQLSTATE')) {
-        Flushbar(
-          title: "Gagal register",
-          message: "Username $username sudah terdaftar",
-          duration: Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        )..show(context);
-      } else {
-        Flushbar(
-          title: "Gagal register",
-          message: e.response.statusMessage,
-          duration: Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        )..show(context);
-      }
-    }
   }
 }

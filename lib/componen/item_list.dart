@@ -5,7 +5,7 @@ class ItemList extends StatelessWidget {
   final itemName;
   final price;
 
-  const ItemList({Key key, this.imageUrl, this.itemName, this.price}) : super(key: key);
+  const ItemList({Key? key, this.imageUrl, this.itemName, this.price}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class ItemList extends StatelessWidget {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        '\$$price' ?? '',
+                        '\$$price',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ],

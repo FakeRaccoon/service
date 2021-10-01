@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:service/componen/custom_button.dart';
 import 'package:service/root.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,21 +10,21 @@ class Users extends StatefulWidget {
 }
 
 class _UsersState extends State<Users> {
-  SharedPreferences sharedPreferences;
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
-
+  late SharedPreferences sharedPreferences;
   Future logout() async {
     sharedPreferences = await SharedPreferences.getInstance();
     sharedPreferences.clear();
     Get.offAll(() => Root());
   }
 
-  String name;
-  String userRole;
+  late String name;
+
+  late String userRole;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +44,8 @@ class _UsersState extends State<Users> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               elevation: 4,
               child: ListTile(
-                title: Text(name ?? '', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
-                subtitle: Text(userRole ?? ''),
+                title: Text(name, style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                subtitle: Text(userRole),
               ),
             ),
             SizedBox(height: 10),
@@ -75,11 +74,6 @@ class _UsersState extends State<Users> {
               ),
             ),
             SizedBox(height: 20),
-            CustomButton(
-              onTap: () => logout(),
-              color: Colors.amber,
-              title: 'Konfirmasi',
-            )
           ],
         ),
       ),

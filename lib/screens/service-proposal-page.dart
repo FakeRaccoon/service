@@ -3,49 +3,59 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:service/models/order-detail-model.dart';
 import 'package:service/models/order-model.dart';
-import 'package:service/sercvices/api.dart';
+import 'package:service/responsive.dart';
+import 'package:service/services/api.dart';
 
 class ServiceProposal extends StatefulWidget {
-  const ServiceProposal({Key key}) : super(key: key);
+  const ServiceProposal({Key? key}) : super(key: key);
 
   @override
   _ServiceProposalState createState() => _ServiceProposalState();
 }
 
 class _ServiceProposalState extends State<ServiceProposal> {
-  final key = GlobalKey();
-
-  bool isLoading = true;
-  OrderModel order;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.black),
-        title: Text(
-          'Service Proposal',
-          style: GoogleFonts.sourceSansPro(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: FutureBuilder(
-        future: APIService().getOrder(1, null),
-        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+      backgroundColor: Colors.white,
+      appBar: !Responsive.isMobile(context)
+          ? null
+          : AppBar(
+              iconTheme: IconThemeData(color: Colors.black),
+              title: Text(
+                'Service Proposal',
+                style: GoogleFonts.sourceSansPro(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: Colors.white,
+              elevation: 0,
+            ),
+      body: FutureBuilder<List<Order>>(
+        future: APIService().getOrder(),
+        builder: (BuildContext context, snapshot) {
           if (snapshot.hasData) {
-            if (snapshot.data == null) {
+            if (snapshot.data!.isEmpty) {
               return Center(
-                child: Text('Data Kosong'),
+                child: Text('Tidak ada data'),
               );
             }
-            return OrderList(order: snapshot.data, key: key);
+            if (Responsive.isMobile(context)) {
+              return OrderList(orders: snapshot.data!);
+            }
+            return Container(
+              height: Get.height * .70,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Colors.grey[300]!,
+                ),
+              ),
+              child: OrderList(orders: snapshot.data!),
+            );
           }
           return Center(child: CircularProgressIndicator());
         },
@@ -55,52 +65,50 @@ class _ServiceProposalState extends State<ServiceProposal> {
 }
 
 class OrderList extends StatefulWidget {
-  final OrderModel order;
-  const OrderList({Key key, this.order}) : super(key: key);
+  final List<Order> orders;
+  const OrderList({Key? key, required this.orders}) : super(key: key);
 
   @override
   _OrderListState createState() => _OrderListState();
 }
 
 class _OrderListState extends State<OrderList> {
-  List<Datum> data;
+  late List<Order> data;
 
   int currentPage = 1;
   bool hasMore = false;
 
-  ScrollController scrollController = ScrollController();
+  late ScrollController scrollController;
 
   TextStyle header = GoogleFonts.sourceSansPro();
   TextStyle content = GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold);
 
-  Future refresh() async {
-    APIService().getOrder(1, null).then((value) {
-      OrderModel value;
-      setState(() {
-        data = value.data;
-      });
+  Future<void> refresh() async {
+    final order = await APIService().getOrder();
+    setState(() {
+      data = order;
     });
   }
 
   @override
   void initState() {
     super.initState();
-    data = widget.order.data;
-    scrollController.addListener(() {
+    data = widget.orders;
+    scrollController = ScrollController();
+    scrollController.addListener(() async {
       if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        APIService().getOrder(currentPage + 1, null).then((value) {
-          if (value.data.isEmpty) {
-            setState(() {
-              hasMore = false;
-            });
-          } else {
-            setState(() {
-              currentPage++;
-              hasMore = true;
-              data.addAll(value.data);
-            });
-          }
-        });
+        final value = await APIService().getOrder(page: currentPage + 1);
+        if (value.isEmpty) {
+          setState(() {
+            hasMore = false;
+          });
+        } else {
+          setState(() {
+            currentPage++;
+            hasMore = true;
+            data.addAll(value);
+          });
+        }
       }
     });
   }
@@ -116,6 +124,7 @@ class _OrderListState extends State<OrderList> {
     return RefreshIndicator(
       onRefresh: refresh,
       child: ListView.builder(
+        physics: AlwaysScrollableScrollPhysics(),
         controller: scrollController,
         shrinkWrap: true,
         itemCount: hasMore ? data.length + 1 : data.length,
@@ -123,44 +132,43 @@ class _OrderListState extends State<OrderList> {
           if (index == data.length) {
             return _buildProgressIndicator();
           }
+          final convert = data[index].status;
+          late String status;
+          switch (convert) {
+            case 0:
+              status = 'Cek Teknisi';
+              break;
+          }
           return Card(
-            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    status ?? '',
+                    style: GoogleFonts.sourceSansPro(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   ListTile(
+                    onTap: () => Get.to(
+                      () => ResponsiveServiceProposalPage(
+                        id: data[index].id!,
+                      ),
+                    ),
                     contentPadding: EdgeInsets.zero,
-                    title: Text(data[index].item ?? '-', style: content),
+                    title: Text(data[index].item!.itemName, style: content),
                     subtitle: Row(
                       children: [
                         Icon(Icons.date_range_rounded, color: Colors.grey[600]),
                         SizedBox(width: 5),
-                        Text(DateFormat('d MMMM y').format(data[index].createdAt) ?? '-', style: header),
+                        Text(DateFormat('d MMMM y').format(data[index].createdAt!), style: header),
                       ],
                     ),
-                    trailing: Text(data[index].customer.name ?? '-', style: header),
+                    trailing: Text(data[index].customer!.name!, style: header),
                   ),
-                  // Text(data[index].item ?? '-', style: content),
-                  // SizedBox(height: 10),
-                  // Row(
-                  //   children: [
-                  //     Icon(Icons.date_range_rounded),
-                  //     SizedBox(width: 5),
-                  //     Text(DateFormat('d MMMM y').format(data[index].createdAt) ?? '-', style: header),
-                  //   ],
-                  // ),
-                  // SizedBox(height: 10),
-                  // Text('Kontak', style: header),
-                  // Text('${data[index].customer.contact}' ?? '-', style: content),
-                  // SizedBox(height: 10),
-                  // Text('Barang', style: header),
-                  // Text(data[index].item ?? '-', style: content),
-                  // SizedBox(height: 10),
-                  // Text('Masalah Mesin', style: header),
-                  // Text(data[index].problem ?? '-', style: content),
                 ],
               ),
             ),
@@ -180,16 +188,35 @@ class _OrderListState extends State<OrderList> {
   }
 }
 
+class ResponsiveServiceProposalPage extends StatelessWidget {
+  const ResponsiveServiceProposalPage({Key? key, required this.id}) : super(key: key);
+  final int id;
+  @override
+  Widget build(BuildContext context) {
+    return Responsive(
+      mobile: Scaffold(),
+      tablet: ServiceProposalDetail(id: id),
+      web: Scaffold(
+        body: Center(
+          child: Container(
+            width: 1200,
+            child: ServiceProposalDetail(id: id),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ServiceProposalDetail extends StatefulWidget {
+  final int id;
+
+  const ServiceProposalDetail({Key? key, required this.id}) : super(key: key);
   @override
   _ServiceProposalDetailState createState() => _ServiceProposalDetailState();
 }
 
 class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
-  Future onRefresh() async {
-    setState(() {});
-  }
-
   bool isChecked = false;
   bool checkValue = false;
 
@@ -203,23 +230,24 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
-        title: Text('Proposal Service',
-            style: GoogleFonts.sourceSansPro(color: Colors.black, fontWeight: FontWeight.bold)),
-      ),
-      body: Stack(
-        children: [
-          Container(
-            color: Color.fromRGBO(227, 227, 225, 1),
-            height: Get.height * .25,
-            width: Get.width,
+        title: Text(
+          'Proposal Service',
+          style: GoogleFonts.sourceSansPro(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
-          SafeArea(
-            child: SingleChildScrollView(
+        ),
+      ),
+      body: FutureBuilder<OrderDetail>(
+        future: APIService().getOrderDetail(widget.id),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final order = snapshot.data;
+            return SingleChildScrollView(
               child: Column(
                 children: [
                   Card(
@@ -233,17 +261,27 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                         children: [
                           Row(
                             children: [
-                              Text('TANGGAL TERIMA',
-                                  style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                              Text(
+                                'TANGGAL TERIMA',
+                                style: GoogleFonts.sourceSansPro(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
                               Spacer(),
-                              Text('JAM',
-                                  style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                              Text(
+                                'JAM',
+                                style: GoogleFonts.sourceSansPro(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
                             ],
                           ),
                           Row(
                             children: [
                               Text(
-                                DateFormat('d MMMM y').format(DateTime.now()).toString(),
+                                DateFormat('d MMMM y').format(snapshot.data!.createdAt!).toString(),
                                 style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
                               ),
                               Spacer(),
@@ -252,8 +290,13 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                             ],
                           ),
                           SizedBox(height: 20),
-                          Text('TANGGAL SELESAI',
-                              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          Text(
+                            'TANGGAL SELESAI',
+                            style: GoogleFonts.sourceSansPro(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
                           Text(
                             DateFormat('d MMMM y').format(DateTime.now()).toString(),
                             style: GoogleFonts.sourceSansPro(
@@ -262,10 +305,15 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          Text('MASALAH',
-                              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
                           Text(
-                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                            'MASALAH',
+                            style: GoogleFonts.sourceSansPro(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            order!.problem ?? '-',
                             textAlign: TextAlign.justify,
                           ),
                         ],
@@ -281,34 +329,34 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('BIAYA PART',
-                              style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
-                          ListView(
-                            physics: NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            children: [
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text('Part 1'),
-                                subtitle: Text('Rp 150.000'),
-                                trailing: Text('1x'),
-                              ),
-                              Divider(thickness: 1),
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text('Part 2'),
-                                subtitle: Text('Rp 200.000'),
-                                trailing: Text('2x'),
-                              ),
-                            ],
+                          Text(
+                            'BIAYA PART',
+                            style: GoogleFonts.sourceSansPro(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
                           ),
+                          if (order.orderItems!.isNotEmpty)
+                            ListView.builder(
+                              physics: NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: order.orderItems!.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(order.orderItems![index].item!.itemName!),
+                                  subtitle: Text('Rp ${currency.format(order.orderItems![index].price ?? 0)}'),
+                                  trailing: Text('x${order.orderItems![index].qty ?? 0}'),
+                                );
+                              },
+                            ),
                           // SizedBox(height: 10),
                           // Text('BIAYA',
                           //     style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text('Biaya Perbaikan'),
-                            trailing: Text('Rp 2.000.000'),
+                            trailing: Text('Rp ${currency.format(order.payment?.repairFee ?? 0)}'),
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -328,7 +376,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                                   value: checkValue,
                                   onChanged: (newValue) {
                                     setState(() {
-                                      checkValue = newValue;
+                                      checkValue = newValue!;
                                     });
                                   },
                                 ),
@@ -359,9 +407,12 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
+            );
+          }
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
       ),
     );
   }

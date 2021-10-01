@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class MenusItems extends StatelessWidget {
-  final icon;
+  final Icon icon;
   final String text;
-  final onTap;
+  final Function() onTap;
 
-  const MenusItems({Key key, @required this.icon, @required this.text, this.onTap}) : super(key: key);
+  const MenusItems({Key? key, required this.icon, required this.text, required this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

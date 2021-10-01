@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
-import 'package:service/home.dart';
+import 'package:service/screens/menu-page.dart';
 import 'package:service/screens/users.dart';
 
 class Body extends StatefulWidget {
@@ -14,10 +13,9 @@ class _BodyState extends State<Body> {
 
   @override
   void initState() {
-    pageList.add(Home());
+    pageList.add(Menu());
     pageList.add(Users());
     super.initState();
-    FlutterStatusbarcolor.setStatusBarWhiteForeground(false);
   }
 
   @override
