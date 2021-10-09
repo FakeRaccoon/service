@@ -37,7 +37,7 @@ class LoginController extends GetxController {
     api.login(userController.text, passController.text).then((value) async {
       await box.write('token', value['token']);
       await box.write('refreshToken', value['refreshToken']);
-      Get.offAll(() => Home());
+      Get.offAllNamed('/');
     }, onError: (e) {
       Get.rawSnackbar(
         messageText: Text(

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart' as route;
 import 'package:get/get_connect/http/src/request/request.dart';
 import 'package:get/get_utils/get_utils.dart';
 import 'package:get_storage/get_storage.dart';
@@ -36,19 +37,6 @@ class APIService {
   );
 
   Dio dio = Dio(options);
-
-  Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {
-    final options = new Options(
-      method: requestOptions.method,
-      headers: requestOptions.headers,
-    );
-    return dio.request<dynamic>(
-      requestOptions.path,
-      data: requestOptions.data,
-      queryParameters: requestOptions.queryParameters,
-      options: options,
-    );
-  }
 
   Future getToken() async {
     print('Refresh Token Called');
@@ -83,6 +71,37 @@ class APIService {
       await box.write('token', refresh.data['token']);
     } on DioError catch (e) {
       throw e.message;
+    }
+  }
+
+  Future authCheck() async {
+    try {
+      dio.interceptors.clear();
+      dio.interceptors.add(InterceptorsWrapper(onError: (DioError error, handler) async {
+        if (error.response?.statusCode == 403 || error.response?.statusCode == 401) {
+          try {
+            await refreshToken().then((value) async {
+              error.requestOptions.headers["Authorization"] = "Bearer " + box.read('token');
+              final opts = new Options(
+                method: error.requestOptions.method,
+                headers: error.requestOptions.headers,
+              );
+              final cloneReq = await dio.request(
+                error.requestOptions.path,
+                options: opts,
+                data: error.requestOptions.data,
+                queryParameters: error.requestOptions.queryParameters,
+              );
+              return handler.resolve(cloneReq);
+            });
+          } catch (e) {
+            // TODO
+          }
+        }
+      }));
+      route.Get.offAllNamed('/home');
+    } on DioError {
+      route.Get.offAllNamed('/login');
     }
   }
 
@@ -124,6 +143,7 @@ class APIService {
     try {
       await dio.post(baseUrl + '/auth/logout', data: {"token": box.read('refreshToken')});
       await box.erase();
+      route.Get.offAllNamed('/login');
     } on DioError catch (e) {
       ErrorHandling.throwError(e);
     }
@@ -187,23 +207,28 @@ class APIService {
     }
   }
 
-  Future updateOrderItem(int id, {int? qty, int? price}) async {
+  Future updateOrderItemQty(int id, int qty) async {
     try {
-      final response = await dio.post(baseUrl + '/order-items/$id', data: {
-        qty == null ? null : "qty": qty,
-        price == null ? null : "price": price,
-      });
+      final response = await dio.put(baseUrl + '/order-items/$id', data: {"qty": qty});
+      return response.data;
+    } on DioError catch (e) {
+      print(e);
+      ErrorHandling.throwError(e);
+    }
+  }
+
+  Future updateOrderItemPrice(int id, int price) async {
+    try {
+      final response = await dio.put(baseUrl + '/order-items/$id', data: {"price": price});
       return response.data;
     } on DioError catch (e) {
       ErrorHandling.throwError(e);
     }
   }
 
-  Future deleteOrderItem(id) async {
-    final token = box.read('token');
-    final url = '$baseUrl/order-item/$id';
+  Future deleteOrderItem(int id) async {
     try {
-      final response = await dio.delete(url, options: Options(headers: {"Authorization": "Bearer $token"}));
+      final response = await dio.delete(baseUrl + '/order-items/$id');
       return response.data;
     } on DioError catch (e) {
       ErrorHandling.throwError(e);
@@ -240,13 +265,15 @@ class APIService {
 
   Future updateOrder(int id, {DateTime? estimatedDate, String? problem, int? status}) async {
     try {
-      final response = await dio.put(baseUrl + '/orders/$id', data: {
-        status == null ? null : "status": status,
-        problem == null ? null : "problem": problem,
-        estimatedDate == null ? null : "estimated_date": estimatedDate,
-      });
+      var formData = FormData();
+      if (estimatedDate != null) formData.fields.add(MapEntry('estimated_date', '$estimatedDate'));
+      if (problem != null) formData.fields.add(MapEntry('problem', '$problem'));
+      if (status != null) formData.fields.add(MapEntry('status', '$status'));
+      final response = await dio.put(baseUrl + '/orders/$id', data: {"estimated_date": estimatedDate.toString()});
+      print(response.data);
       return response.data;
     } on DioError catch (e) {
+      print(e);
       ErrorHandling.throwError(e);
     }
   }

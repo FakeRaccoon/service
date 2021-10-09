@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:service/models/order-detail-model.dart';
@@ -75,6 +76,8 @@ class OrderList extends StatefulWidget {
 class _OrderListState extends State<OrderList> {
   late List<Order> data;
 
+  final storage = GetStorage();
+
   int currentPage = 1;
   bool hasMore = false;
 
@@ -147,17 +150,16 @@ class _OrderListState extends State<OrderList> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    status ?? '',
+                    status,
                     style: GoogleFonts.sourceSansPro(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   ListTile(
-                    onTap: () => Get.to(
-                      () => ResponsiveServiceProposalPage(
-                        id: data[index].id!,
-                      ),
-                    ),
+                    onTap: () async {
+                      await storage.write('orderId', data[index].id);
+                      Get.toNamed('/proposal/detail');
+                    },
                     contentPadding: EdgeInsets.zero,
                     title: Text(data[index].item!.itemName, style: content),
                     subtitle: Row(
@@ -189,18 +191,20 @@ class _OrderListState extends State<OrderList> {
 }
 
 class ResponsiveServiceProposalPage extends StatelessWidget {
-  const ResponsiveServiceProposalPage({Key? key, required this.id}) : super(key: key);
-  final int id;
   @override
   Widget build(BuildContext context) {
     return Responsive(
       mobile: Scaffold(),
-      tablet: ServiceProposalDetail(id: id),
+      tablet: Scaffold(
+        backgroundColor: Colors.white,
+        body: ServiceProposalDetail(),
+      ),
       web: Scaffold(
+        backgroundColor: Colors.white,
         body: Center(
           child: Container(
             width: 1200,
-            child: ServiceProposalDetail(id: id),
+            child: ServiceProposalDetail(),
           ),
         ),
       ),
@@ -209,9 +213,6 @@ class ResponsiveServiceProposalPage extends StatelessWidget {
 }
 
 class ServiceProposalDetail extends StatefulWidget {
-  final int id;
-
-  const ServiceProposalDetail({Key? key, required this.id}) : super(key: key);
   @override
   _ServiceProposalDetailState createState() => _ServiceProposalDetailState();
 }
@@ -222,6 +223,8 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
 
   NumberFormat currency = NumberFormat.decimalPattern();
 
+  final id = GetStorage().read('orderId');
+
   @override
   void initState() {
     super.initState();
@@ -230,6 +233,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -243,7 +247,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
         ),
       ),
       body: FutureBuilder<OrderDetail>(
-        future: APIService().getOrderDetail(widget.id),
+        future: APIService().getOrderDetail(id),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final order = snapshot.data;
@@ -252,7 +256,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                 children: [
                   Card(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    elevation: 4,
+                    elevation: 2,
                     margin: EdgeInsets.all(10),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
@@ -285,7 +289,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                                 style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
                               ),
                               Spacer(),
-                              Text(DateFormat.jm().format(DateTime.now()).toString(),
+                              Text(DateFormat.jm().format(snapshot.data!.createdAt!).toString(),
                                   style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
                             ],
                           ),
@@ -313,7 +317,19 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                             ),
                           ),
                           Text(
-                            order!.problem ?? '-',
+                            order!.problem ?? 'Masalah barang belum ditetapkan',
+                            textAlign: TextAlign.justify,
+                          ),
+                          SizedBox(height: 20),
+                          Text(
+                            'CUSTOMER',
+                            style: GoogleFonts.sourceSansPro(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            order.customer!.name!,
                             textAlign: TextAlign.justify,
                           ),
                         ],
@@ -322,7 +338,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                   ),
                   Card(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    elevation: 4,
+                    elevation: 2,
                     margin: EdgeInsets.all(10),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
@@ -342,17 +358,17 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                               shrinkWrap: true,
                               itemCount: order.orderItems!.length,
                               itemBuilder: (context, index) {
+                                final orderItems = order.orderItems![index];
                                 return ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: Text(order.orderItems![index].item!.itemName!),
-                                  subtitle: Text('Rp ${currency.format(order.orderItems![index].price ?? 0)}'),
-                                  trailing: Text('x${order.orderItems![index].qty ?? 0}'),
+                                  title: Text(orderItems.item!.itemName!),
+                                  subtitle: orderItems.price == null
+                                      ? Text('Harga belum ditetapkan')
+                                      : Text('Rp ${currency.format(orderItems.price)}'),
+                                  trailing: Text('x${orderItems.qty ?? 0}'),
                                 );
                               },
                             ),
-                          // SizedBox(height: 10),
-                          // Text('BIAYA',
-                          //     style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text('Biaya Perbaikan'),
@@ -390,15 +406,19 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                             ],
                           ),
                           SizedBox(height: 20),
-                          SizedBox(
-                            width: Get.width,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                primary: Color.fromRGBO(80, 80, 80, 1),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              height: 50,
+                              width: 200,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  primary: Color.fromRGBO(80, 80, 80, 1),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onPressed: () {},
+                                child: Text('Simpan'),
                               ),
-                              onPressed: () {},
-                              child: Text('Simpan'),
                             ),
                           ),
                         ],

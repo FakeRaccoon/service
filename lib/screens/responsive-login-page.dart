@@ -13,22 +13,26 @@ class ResponsiveLoginPage extends StatelessWidget {
         ),
         body: Login(),
       ),
-      tablet: Center(
-        child: Row(
-          children: [
-            Spacer(flex: 1),
-            Expanded(child: Login(), flex: 2),
-            Spacer(flex: 1),
-          ],
+      tablet: Scaffold(
+        body: Center(
+          child: Row(
+            children: [
+              Spacer(flex: 1),
+              Expanded(child: Login(), flex: 2),
+              Spacer(flex: 1),
+            ],
+          ),
         ),
       ),
-      web: Center(
-        child: Row(
-          children: [
-            Spacer(flex: 1),
-            Expanded(child: Login(), flex: 1),
-            Spacer(flex: 1),
-          ],
+      web: Scaffold(
+        body: Center(
+          child: Row(
+            children: [
+              Spacer(flex: 1),
+              Expanded(child: Login(), flex: 1),
+              Spacer(flex: 1),
+            ],
+          ),
         ),
       ),
     );

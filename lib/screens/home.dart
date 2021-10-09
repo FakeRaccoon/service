@@ -30,12 +30,7 @@ class _HomeState extends State<Home> {
           return Responsive(
             mobile: Scaffold(
                 appBar: AppBar(
-                  backwardsCompatibility: false,
                   backgroundColor: Colors.white,
-                  systemOverlayStyle: SystemUiOverlayStyle(
-                    statusBarColor: Colors.transparent,
-                    statusBarIconBrightness: Brightness.dark,
-                  ),
                   elevation: 0,
                   title: Text(
                     'Menus',
@@ -46,7 +41,7 @@ class _HomeState extends State<Home> {
                   ),
                   actions: [
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () => APIService().logout(),
                       icon: Icon(Icons.exit_to_app_rounded),
                     ),
                     SizedBox(width: 20),
@@ -130,8 +125,12 @@ class HomeTabView extends StatelessWidget {
             child: TabBar(
               indicatorColor: kPrimary,
               controller: controller.tabController,
+              labelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+              unselectedLabelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
               tabs: controller.tabs
-                  .map((e) => Tab(child: Text(e, style: GoogleFonts.sourceSansPro(color: Colors.black))))
+                  .map((e) => Tab(child: Text(e)))
                   .toList(),
             ),
           ),

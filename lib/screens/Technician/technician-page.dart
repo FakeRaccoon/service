@@ -120,7 +120,7 @@ class _TechnicianListState extends State<TechnicianList> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
-                  onTap: () => Get.to(() => ResponsiveTechnicianDetailPage(id: data[index].id!)),
+                  onTap: () => Get.toNamed('/service/detail', arguments: data[index].id),
                   contentPadding: EdgeInsets.zero,
                   title: Text(data[index].item!.itemName, style: content),
                   subtitle: Row(

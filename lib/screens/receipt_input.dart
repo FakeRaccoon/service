@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:service/componen/term-and-condition.dart';
 import 'package:service/controllers/receipt-input-controller.dart';
 import 'package:service/models/item-model.dart';
 import 'package:service/models/order-model.dart';
@@ -358,7 +359,9 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   SizedBox(width: 10),
                   Text('Terima '),
                   InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      Get.dialog(TermAndCondition());
+                    },
                     child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
@@ -510,7 +513,7 @@ class SuccessPage extends StatelessWidget {
                 primary: Color(0xff8CC24A),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
-              onPressed: () => Get.offAll(() => Home()),
+              onPressed: () => Get.offNamed('/'),
               child: Text('Selesai'),
             ),
           ],

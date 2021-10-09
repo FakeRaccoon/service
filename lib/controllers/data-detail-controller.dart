@@ -25,6 +25,7 @@ class DataDetailController extends GetxController {
   late Future<List<ItemModel>> itemFuture;
 
   late TextEditingController problemController;
+  var priceController = TextEditingController().obs;
   late TextEditingController itemController;
   NumberFormat currency = NumberFormat.decimalPattern();
 
@@ -54,16 +55,18 @@ class DataDetailController extends GetxController {
     });
   }
 
-  void updateOrderItem(id, itemQty) {
-    api.updateOrderItem(id, qty: itemQty).then((value) {
-      fetchData(orderId.value);
-    }, onError: (e) {});
+  void updateOrderItemQty() {
+    orderItem.forEach((element) async {
+      api.updateOrderItemQty(element.id!, element.qty!).then((value) {}, onError: (e) {});
+    });
   }
 
-  void deleteOrderItem(id) {
-    api.deleteOrderItem(id).then((value) {
-      fetchData(orderId.value);
-    }, onError: (e) {});
+  void deleteOrderItem(int orderId, int itemId) {
+    api.deleteOrderItem(itemId).then((value) {
+      fetchData(orderId);
+    }, onError: (e) {
+      print(e);
+    });
   }
 
   void increment(id, initialQty) {
@@ -90,6 +93,7 @@ class DataDetailController extends GetxController {
   void onInit() {
     super.onInit();
     debounce(itemSearch, (value) => getItem(value.toString()));
+    debounce(qty, (_) => updateOrderItemQty());
     itemFuture = APIService().getItem();
     problemController = TextEditingController();
     itemController = TextEditingController();
