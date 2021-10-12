@@ -21,7 +21,7 @@ import 'package:service/services/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // const BaseUrl = 'http://10.0.2.2:8000';
-const baseUrl = 'http://127.0.0.1:3000';
+const baseUrl = 'http://192.168.5.114:3000';
 
 const TIMEOUT_DURATION = 10 * 1000;
 
@@ -36,7 +36,7 @@ class APIService {
     receiveDataWhenStatusError: true,
   );
 
-  Dio dio = Dio(options);
+  Dio dio = new Dio(options);
 
   Future getToken() async {
     print('Refresh Token Called');
@@ -195,6 +195,22 @@ class APIService {
     }
   }
 
+  Future updateOrder(int id, {DateTime? estimatedDate, String? problem, int? status, int? repairFee, int? dp, String? type}) async {
+    try {
+      var formData = FormData();
+      if (estimatedDate != null) formData.fields.add(MapEntry('estimated_date', '$estimatedDate'));
+      if (repairFee != null) formData.fields.add(MapEntry('repair_fee', '$repairFee'));
+      if (dp != null) formData.fields.add(MapEntry('dp', '$dp'));
+      if (type != null) formData.fields.add(MapEntry('type', '$type'));
+      if (problem != null) formData.fields.add(MapEntry('problem', '$problem'));
+      if (status != null) formData.fields.add(MapEntry('status', '$status'));
+      final response = await dio.put(baseUrl + '/orders/$id', data: formData);
+      return response.data;
+    } on DioError catch (e) {
+      throw e.message;
+    }
+  }
+
   Future createOrderItem(int orderId, int itemId) async {
     try {
       final response = await dio.post(baseUrl + '/order-items', data: {
@@ -259,21 +275,6 @@ class APIService {
       });
       return response.data;
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
-    }
-  }
-
-  Future updateOrder(int id, {DateTime? estimatedDate, String? problem, int? status}) async {
-    try {
-      var formData = FormData();
-      if (estimatedDate != null) formData.fields.add(MapEntry('estimated_date', '$estimatedDate'));
-      if (problem != null) formData.fields.add(MapEntry('problem', '$problem'));
-      if (status != null) formData.fields.add(MapEntry('status', '$status'));
-      final response = await dio.put(baseUrl + '/orders/$id', data: {"estimated_date": estimatedDate.toString()});
-      print(response.data);
-      return response.data;
-    } on DioError catch (e) {
-      print(e);
       ErrorHandling.throwError(e);
     }
   }

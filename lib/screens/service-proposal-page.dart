@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -194,7 +195,10 @@ class ResponsiveServiceProposalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Responsive(
-      mobile: Scaffold(),
+      mobile: Scaffold(
+        backgroundColor: Colors.white,
+        body: ServiceProposalDetail(),
+      ),
       tablet: Scaffold(
         backgroundColor: Colors.white,
         body: ServiceProposalDetail(),
@@ -223,6 +227,8 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
 
   NumberFormat currency = NumberFormat.decimalPattern();
 
+  TextStyle titleStyle = GoogleFonts.sourceSansPro(color: Colors.grey[800]);
+
   final id = GetStorage().read('orderId');
 
   @override
@@ -237,6 +243,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         iconTheme: IconThemeData(color: Colors.black),
         title: Text(
           'Proposal Service',
@@ -251,105 +258,89 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final order = snapshot.data;
+            int totalItems = 0;
+            int total = order!.payment?.repairFee ?? 0;
+            if (order.orderItems!.isNotEmpty) {
+              for (int i = 0; i < order.orderItems!.length; i++) {
+                if (order.orderItems![i].price != null) {
+                  totalItems = totalItems + (order.orderItems![i].qty! * order.orderItems![i].price!);
+                  total = total + (order.orderItems![i].qty! * order.orderItems![i].price!);
+                }
+              }
+            }
             return SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 2,
-                    margin: EdgeInsets.all(10),
+                    margin: EdgeInsets.symmetric(horizontal: 10),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                'TANGGAL TERIMA',
-                                style: GoogleFonts.sourceSansPro(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Spacer(),
-                              Text(
-                                'JAM',
-                                style: GoogleFonts.sourceSansPro(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                DateFormat('d MMMM y').format(snapshot.data!.createdAt!).toString(),
-                                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
-                              ),
-                              Spacer(),
-                              Text(DateFormat.jm().format(snapshot.data!.createdAt!).toString(),
-                                  style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
-                            ],
-                          ),
-                          SizedBox(height: 20),
                           Text(
-                            'TANGGAL SELESAI',
-                            style: GoogleFonts.sourceSansPro(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            DateFormat('d MMMM y').format(DateTime.now()).toString(),
+                            'Detail Service',
                             style: GoogleFonts.sourceSansPro(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                             ),
                           ),
-                          SizedBox(height: 20),
-                          Text(
-                            'MASALAH',
-                            style: GoogleFonts.sourceSansPro(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Tanggal Service',
+                              style: titleStyle,
                             ),
+                            trailing: Text('${DateFormat('d MMMM y, hh:mm').format(snapshot.data!.createdAt!)} WIB'),
                           ),
-                          Text(
-                            order!.problem ?? 'Masalah barang belum ditetapkan',
-                            textAlign: TextAlign.justify,
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            'CUSTOMER',
-                            style: GoogleFonts.sourceSansPro(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Estimasi Selesai',
+                              style: titleStyle,
                             ),
+                            trailing: order.estimatedDate == null
+                                ? Text('Belum ada tanggal perkiraan selesai')
+                                : Text('${DateFormat('d MMMM y').format(order.estimatedDate!)}'),
                           ),
-                          Text(
-                            order.customer!.name!,
-                            textAlign: TextAlign.justify,
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Customer',
+                              style: titleStyle,
+                            ),
+                            trailing: Text(order.customer!.name!),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Msalah Barang',
+                              style: titleStyle,
+                            ),
+                            trailing: Text('${order.problem ?? 'Masalah barang belum ditetapkan'}'),
                           ),
                         ],
                       ),
                     ),
                   ),
+                  SizedBox(height: 10),
                   Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 2,
-                    margin: EdgeInsets.all(10),
+                    margin: EdgeInsets.symmetric(horizontal: 10),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'BIAYA PART',
+                            'Detail Part',
                             style: GoogleFonts.sourceSansPro(
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey,
+                              fontSize: 18,
                             ),
                           ),
                           if (order.orderItems!.isNotEmpty)
@@ -368,17 +359,60 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                                   trailing: Text('x${orderItems.qty ?? 0}'),
                                 );
                               },
+                            )
+                          else
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text('Part belum ditentukan'),
                             ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Card(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 2,
+                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Rincian Biaya',
+                            style: GoogleFonts.sourceSansPro(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text('Biaya Perbaikan'),
+                            title: Text(
+                              'Total Biaya Part',
+                              style: titleStyle,
+                            ),
+                            trailing: Text('Rp ${currency.format(totalItems)}'),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Biaya Perbaikan',
+                              style: titleStyle,
+                            ),
                             trailing: Text('Rp ${currency.format(order.payment?.repairFee ?? 0)}'),
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text('Total', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
-                            trailing:
-                                Text('Rp 2.350.000', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                            trailing: Text('Rp${currency.format(total)}',
+                                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text('Dp (75% dari Total)', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                            trailing: Text('Rp${currency.format(total * 75 / 100)}',
+                                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
                           ),
                           SizedBox(height: 20),
                           Row(

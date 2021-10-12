@@ -41,6 +41,7 @@ class _HomeState extends State<Home> {
                   ),
                   actions: [
                     IconButton(
+                      color: Colors.black,
                       onPressed: () => APIService().logout(),
                       icon: Icon(Icons.exit_to_app_rounded),
                     ),

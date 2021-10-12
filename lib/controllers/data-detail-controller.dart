@@ -25,6 +25,7 @@ class DataDetailController extends GetxController {
   late Future<List<ItemModel>> itemFuture;
 
   late TextEditingController problemController;
+  late TextEditingController repairFeeController;
   var priceController = TextEditingController().obs;
   late TextEditingController itemController;
   NumberFormat currency = NumberFormat.decimalPattern();
@@ -55,10 +56,25 @@ class DataDetailController extends GetxController {
     });
   }
 
+  void updateProblem(int id, String problem) async {
+    await api.updateOrder(id, problem: problem).catchError((e) => print(e));
+    Get.rawSnackbar(message: 'Berhasil update masalah barang');
+  }
+
+  void updateRepairFee(int id, repairFee) async {
+    await api.updateOrder(id, repairFee: repairFee).catchError((e) => print(e));
+    Get.rawSnackbar(message: 'Berhasil update biaya service');
+  }
+
   void updateOrderItemQty() {
     orderItem.forEach((element) async {
       api.updateOrderItemQty(element.id!, element.qty!).then((value) {}, onError: (e) {});
     });
+  }
+
+  void updateOrderPrice(int id, int price) async {
+    await api.updateOrderItemPrice(id, price).catchError((e) => print(e));
+    Get.rawSnackbar(message: 'Berhasil update harga part');
   }
 
   void deleteOrderItem(int orderId, int itemId) {
@@ -97,11 +113,14 @@ class DataDetailController extends GetxController {
     itemFuture = APIService().getItem();
     problemController = TextEditingController();
     itemController = TextEditingController();
+    repairFeeController = TextEditingController();
   }
 
   @override
   void onClose() {
     super.onClose();
     problemController.dispose();
+    itemController.dispose();
+    repairFeeController.dispose();
   }
 }

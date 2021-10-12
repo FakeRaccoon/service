@@ -17,17 +17,19 @@ import 'package:service/services/api.dart';
 
 import '../../style.dart';
 
-class ResponsiveSparePartDetailPage extends StatelessWidget {
+class ResponsiveSparePartDetailPage extends StatefulWidget {
+  @override
+  State<ResponsiveSparePartDetailPage> createState() => _ResponsiveSparePartDetailPageState();
+}
+
+class _ResponsiveSparePartDetailPageState extends State<ResponsiveSparePartDetailPage> {
   final id = Get.arguments;
+
   @override
   Widget build(BuildContext context) {
     return Responsive(
-      mobile: Scaffold(
-        body: SparePartDetailPage(id: id),
-      ),
-      tablet: Scaffold(
-        body: SparePartDetailPage(id: id),
-      ),
+      mobile: SparePartDetailPage(id: id),
+      tablet: SparePartDetailPage(id: id),
       web: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -50,6 +52,9 @@ class SparePartDetailPage extends StatefulWidget {
 
 class _SparePartDetailPageState extends State<SparePartDetailPage> {
   final controller = Get.put(DataDetailController());
+  var currency = NumberFormat.decimalPattern();
+
+  int itemsIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +62,7 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
         title: Text(
@@ -79,14 +85,14 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
                   child: Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
+                    padding: const EdgeInsets.all(defaultPadding / 2),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(order.item!.itemName!, style: AppStyle.headerStyle),
                         SizedBox(height: 20),
-                        Text('Sparepart yang dibutuhkan', style: AppStyle.headerStyle),
+                        Text('Part yang dibutuhkan', style: AppStyle.headerStyle),
                         if (order.orderItems!.isNotEmpty)
                           ListView.builder(
                             shrinkWrap: true,
@@ -94,17 +100,28 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                             itemBuilder: (context, index) {
                               return ListTile(
                                 onTap: () {
-                                  Get.dialog(
-                                    buildDialog(order, index),
-                                  );
+                                  itemsIndex = index;
+                                  if (!Responsive.isMobile(context))
+                                    Get.dialog(buildDialog(order, index));
+                                  else
+                                    showMaterialModalBottomSheet(
+                                      context: context,
+                                      builder: (context) {
+                                        return itemPriceBottomSheet(order);
+                                      },
+                                    );
                                 },
                                 contentPadding: EdgeInsets.only(right: 15),
                                 title: Text(order.orderItems![index].item!.itemName!),
-                                subtitle: Text('Harga belum ditentukan'),
+                                subtitle: order.orderItems![index].price != null
+                                    ? Text('Rp${currency.format(order.orderItems![index].price)}')
+                                    : Text('Harga belum ditentukan'),
                                 trailing: Text('x${order.orderItems![index].qty!}'),
                               );
                             },
-                          ),
+                          )
+                        else
+                          Text('Belum ada list sparepart'),
                         SizedBox(height: 30),
                         Align(
                           alignment: Alignment.centerRight,
@@ -128,24 +145,6 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 10),
-                              SizedBox(
-                                height: 50,
-                                width: 200,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    primary: Color.fromRGBO(80, 80, 80, 1),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  onPressed: () {},
-                                  child: Text(
-                                    'Proses Service',
-                                    style: GoogleFonts.sourceSansPro(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -158,6 +157,66 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
           }
           return Center(child: CircularProgressIndicator());
         },
+      ),
+    );
+  }
+
+  Widget itemPriceBottomSheet(OrderDetail order) {
+    return Padding(
+      padding: Get.mediaQuery.viewInsets,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: IconButton(
+              icon: Icon(Icons.clear),
+              onPressed: () => Get.back(),
+            ),
+            title: Text('Tentukan Harga Part', style: AppStyle.headerStyle),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 10),
+            title: Text('${order.orderItems![itemsIndex].item!.itemName}'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: TextFormField(
+              controller: controller.priceController.value,
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'isi harga barang';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                ThousandsFormatter(),
+              ],
+              decoration: InputDecoration(labelText: 'Harga barang', border: InputBorder.none, prefixText: 'Rp'),
+            ),
+          ),
+          SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: SizedBox(
+              width: Get.width,
+              child: ElevatedButton(
+                onPressed: () {
+                  int newPrice = int.parse(controller.priceController.value.text.replaceAll(',', ''));
+                  controller.order.update((val) {
+                    val!.orderItems![itemsIndex].price = newPrice;
+                  });
+                  Get.back();
+                  controller.updateOrderPrice(order.orderItems![itemsIndex].id!, order.orderItems![itemsIndex].price!);
+                },
+                child: Text('Simpan'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -194,7 +253,7 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                 },
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[0-9.]')),
+                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
                   ThousandsFormatter(),
                 ],
                 decoration: InputDecoration(labelText: 'Harga barang', border: InputBorder.none, prefixText: 'Rp'),
@@ -208,7 +267,11 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                 child: ElevatedButton(
                   onPressed: () {
                     Get.back();
-                    controller.problemController.clear();
+                    int newPrice = int.parse(controller.priceController.value.text.replaceAll(',', ''));
+                    controller.order.update((val) {
+                      val!.orderItems![index].price = newPrice;
+                    });
+                    controller.updateOrderPrice(order.orderItems![index].id!, order.orderItems![index].price!);
                   },
                   child: Text('Simpan'),
                 ),

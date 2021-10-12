@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:pattern_formatter/numeric_formatter.dart';
 import 'package:service/componen/parts-bottom-sheet.dart';
 import 'package:service/controllers/data-detail-controller.dart';
 import 'package:service/models/item-model.dart';
@@ -58,6 +60,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
         title: Text(
@@ -68,6 +71,26 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
           ),
         ),
       ),
+      bottomNavigationBar: kIsWeb
+          ? null
+          : BottomAppBar(
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        child: Text('Simpan'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
       body: FutureBuilder<OrderDetail>(
         future: APIService().getOrderDetail(widget.id),
         builder: (BuildContext context, snapshot) {
@@ -88,19 +111,25 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                       children: [
                         Text(order.item!.itemName!, style: AppStyle.headerStyle),
                         SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Text('Masalah barang', style: AppStyle.headerStyle),
-                            Spacer(),
-                            IconButton(
-                              icon: Icon(Icons.add, size: 20),
-                              onPressed: order.problem == null && kIsWeb
-                                  ? () {
-                                      Get.dialog(inputProblemDialog());
-                                    }
-                                  : null,
-                            ),
-                          ],
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text('Masalah barang', style: AppStyle.headerStyle),
+                          trailing: order.problem != null
+                              ? null
+                              : IconButton(
+                                  icon: Icon(Icons.add, size: 20),
+                                  onPressed: () {
+                                    if (kIsWeb)
+                                      Get.dialog(inputProblemDialog(order));
+                                    else
+                                      showMaterialModalBottomSheet(
+                                        context: context,
+                                        builder: (context) {
+                                          return problemBottomSheet(order);
+                                        },
+                                      );
+                                  },
+                                ),
                         ),
                         if (order.problem != null)
                           ListTile(
@@ -111,7 +140,16 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                               disabledColor: Colors.grey,
                               icon: Icon(Icons.edit, size: 20),
                               onPressed: () {
-                                // bottomSheet(context, order);
+                                if (kIsWeb)
+                                  Get.dialog(inputProblemDialog(order));
+                                else
+                                  showMaterialModalBottomSheet(
+                                    isDismissible: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return problemBottomSheet(order);
+                                    },
+                                  );
                               },
                             ),
                           ),
@@ -136,7 +174,8 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                                 });
                                 final newDate = DateTime.now();
                                 print(date!.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
-                                APIService().updateOrder(order.id!, estimatedDate: date.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
+                                APIService().updateOrder(order.id!,
+                                    estimatedDate: date.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
                                 // DatePicker.showDatePicker(context,
                                 //     locale: LocaleType.id,
                                 //     minTime: DateTime.now(),
@@ -175,24 +214,54 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                             ),
                           ),
                         Divider(thickness: 1),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text('Biaya Perbaikan', style: AppStyle.headerStyle),
+                        ),
+                        if (order.payment?.repairFee != null)
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text('Rp${NumberFormat.decimalPattern().format(order.payment!.repairFee)}',
+                                style: AppStyle.bodyStyle),
+                            trailing: IconButton(
+                              color: Colors.black,
+                              disabledColor: Colors.grey,
+                              icon: Icon(Icons.edit, size: 20),
+                              onPressed: () {
+                                if (kIsWeb)
+                                  Get.dialog(repairFeeDialog(order));
+                                else
+                                  showMaterialModalBottomSheet(
+                                    isDismissible: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return repairFeeBottomSheet(order);
+                                    },
+                                  );
+                              },
+                            ),
+                          ),
+                        Divider(thickness: 1),
                         Row(
                           children: [
-                            Text('Sparepart yang dibutuhkan', style: AppStyle.headerStyle),
+                            Text('Part yang dibutuhkan', style: AppStyle.headerStyle),
                             Spacer(),
                             IconButton(
                               color: Colors.black,
                               icon: Icon(Icons.add, size: 20),
                               onPressed: () {
-                                Get.dialog(itemSearchDialog());
-                                // showMaterialModalBottomSheet(
-                                //   shape: RoundedRectangleBorder(
-                                //     borderRadius: BorderRadius.vertical(
-                                //       top: Radius.circular(20),
-                                //     ),
-                                //   ),
-                                //   context: context,
-                                //   builder: (context) => PartBottomSheet(),
-                                // );
+                                if (!Responsive.isMobile(context))
+                                  Get.dialog(itemSearchDialog());
+                                else
+                                  showMaterialModalBottomSheet(
+                                    // shape: RoundedRectangleBorder(
+                                    //   borderRadius: BorderRadius.vertical(
+                                    //     top: Radius.circular(20),
+                                    //   ),
+                                    // ),
+                                    context: context,
+                                    builder: (context) => itemSearchBottomSheet(),
+                                  );
                               },
                             ),
                           ],
@@ -241,49 +310,52 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                             },
                           ),
                         SizedBox(height: 30),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                height: 50,
-                                width: 200,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    primary: Color.fromRGBO(80, 80, 80, 1),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  onPressed: () {},
-                                  child: Text(
-                                    'Simpan',
-                                    style: GoogleFonts.sourceSansPro(
-                                      fontWeight: FontWeight.bold,
+                        if (!Responsive.isMobile(context))
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  height: 50,
+                                  width: 200,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Color.fromRGBO(80, 80, 80, 1),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () {
+                                      Get.back();
+                                    },
+                                    child: Text(
+                                      'Simpan',
+                                      style: GoogleFonts.sourceSansPro(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(width: 10),
-                              SizedBox(
-                                height: 50,
-                                width: 200,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    primary: Color.fromRGBO(80, 80, 80, 1),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  onPressed: () {},
-                                  child: Text(
-                                    'Proses Service',
-                                    style: GoogleFonts.sourceSansPro(
-                                      fontWeight: FontWeight.bold,
+                                SizedBox(width: 10),
+                                SizedBox(
+                                  height: 50,
+                                  width: 200,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Color.fromRGBO(80, 80, 80, 1),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () {},
+                                    child: Text(
+                                      'Proses Service',
+                                      style: GoogleFonts.sourceSansPro(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -297,7 +369,185 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
     );
   }
 
-  Dialog itemSearchDialog() {
+  Widget repairFeeBottomSheet(OrderDetail order) {
+    return Padding(
+      padding: Get.mediaQuery.viewInsets,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: () {
+                  Get.back();
+                  controller.repairFeeController.clear();
+                },
+              ),
+              title: Text('Biaya perbaikan', style: AppStyle.headerStyle),
+            ),
+            TextFormField(
+              controller: controller.repairFeeController,
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'isi biaya perbaikan';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                ThousandsFormatter(),
+              ],
+              decoration: InputDecoration(labelText: 'Biaya Perbaikan'),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: Get.width,
+              child: ElevatedButton(
+                onPressed: () async {
+                  int repairFee = int.parse(controller.repairFeeController.text.replaceAll(',', ''));
+                  controller.order.update((val) {
+                    val!.payment?.repairFee = repairFee;
+                  });
+                  controller.updateRepairFee(order.id!, repairFee);
+                  controller.repairFeeController.clear();
+                  Get.back();
+                },
+                child: Text('Simpan'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget problemBottomSheet(OrderDetail order) {
+    return Padding(
+      padding: Get.mediaQuery.viewInsets,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: () {
+                  Get.back();
+                  controller.problemController.clear();
+                },
+              ),
+              title: Text(
+                'Edit Masalah Mesin',
+                style: AppStyle.headerStyle,
+              ),
+            ),
+            TextFormField(
+              controller: controller.problemController,
+              decoration: InputDecoration(labelText: 'Masalh Mesin'),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: Get.width,
+              child: ElevatedButton(
+                onPressed: () {
+                  controller.order.update((val) {
+                    val!.problem = controller.problemController.text;
+                  });
+                  controller.updateProblem(order.id!, controller.problemController.text);
+                  controller.problemController.clear();
+                  Get.back();
+                },
+                child: Text('Simpan'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget itemSearchBottomSheet() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: () {
+                  Get.back();
+                },
+              ),
+              title: Text(
+                'Cari Part',
+                style: AppStyle.headerStyle,
+              ),
+            ),
+            SizedBox(height: 10),
+            TextFormField(
+              onChanged: (String value) {
+                controller.itemSearch.value = value;
+              },
+              decoration: InputDecoration(
+                hintText: 'Cari part',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            SizedBox(height: 10),
+            Expanded(
+              child: FutureBuilder<List<ItemModel>>(
+                future: controller.itemFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    controller.item.value = snapshot.data!;
+                    if (snapshot.data!.isEmpty) return Text('Terjadi Kesalahan');
+                    return Obx(
+                      () {
+                        if (controller.item.isEmpty) return Center(child: Text('Barang tidak ditemukan'));
+                        return ListView.separated(
+                          itemCount: controller.item.length,
+                          itemBuilder: (context, index) {
+                            final item = controller.item[index];
+                            return ListTile(
+                              onTap: () {
+                                controller.addOrderItem(widget.id, item.id!);
+                                Get.back();
+                              },
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(item.itemName!),
+                              subtitle: Text(item.itemAlias!),
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) {
+                            return Divider();
+                          },
+                        );
+                      },
+                    );
+                  }
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget itemSearchDialog() {
     return Dialog(
       child: Container(
         height: Get.height,
@@ -371,71 +621,115 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
     );
   }
 
-  Widget inputProblemDialog() => Dialog(
-        child: Container(
-          width: Get.width / 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: IconButton(
-                  icon: Icon(Icons.clear),
-                  onPressed: () => Get.back(),
-                ),
-                title: Text('Masalah Barang', style: AppStyle.headerStyle),
+  Widget inputProblemDialog(OrderDetail order) {
+    return Dialog(
+      child: Container(
+        width: Get.width / 3,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: () => Get.back(),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: TextFormField(
-                  controller: controller.problemController,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'isi masalah barang';
-                    }
-                    return null;
+              title: Text('Masalah Barang', style: AppStyle.headerStyle),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: TextFormField(
+                controller: controller.problemController,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'isi masalah barang';
+                  }
+                  return null;
+                },
+                decoration: InputDecoration(labelText: 'Masalah barang', border: InputBorder.none),
+              ),
+            ),
+            SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: SizedBox(
+                width: Get.width,
+                child: ElevatedButton(
+                  onPressed: () {
+                    controller.order.update((val) {
+                      val!.problem = controller.problemController.text;
+                    });
+                    controller.updateProblem(order.id!, controller.problemController.text);
+                    Get.back();
                   },
-                  decoration: InputDecoration(labelText: 'Masalah barang', border: InputBorder.none),
+                  child: Text('Simpan'),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: SizedBox(
-                  width: Get.width,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      controller.order.update((val) {
-                        val!.problem = controller.problemController.text;
-                      });
-                      Get.back();
-                      // APIService()
-                      //     .updateOrder(data.id, problemController.text, order.data?[0].estimatedDate)
-                      //     .then((value) {
-                      //   Get.back();
-                      //   refresh();
-                      //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      //     content: Text('Berhasil Update Data'),
-                      //     behavior: SnackBarBehavior.floating,
-                      //   ));
-                      // }, onError: (e) {
-                      //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      //     backgroundColor: Colors.red,
-                      //     content: Text(e),
-                      //     behavior: SnackBarBehavior.floating,
-                      //   ));
-                      //   Get.back();
-                      // });
-                    },
-                    child: Text('Simpan'),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
+
+  Widget repairFeeDialog(OrderDetail order) {
+    return Dialog(
+      child: Container(
+        width: Get.width / 3,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: () => Get.back(),
+              ),
+              title: Text('Biaya perbaikan', style: AppStyle.headerStyle),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: TextFormField(
+                controller: controller.repairFeeController,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'isi biaya perbaikan';
+                  }
+                  return null;
+                },
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                  ThousandsFormatter(),
+                ],
+                decoration: InputDecoration(labelText: 'Biaya Perbaikan', border: InputBorder.none),
+              ),
+            ),
+            SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: SizedBox(
+                width: Get.width,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    int repairFee = int.parse(controller.repairFeeController.text.replaceAll(',', ''));
+                    controller.order.update((val) {
+                      val!.payment?.repairFee = repairFee;
+                    });
+                    controller.updateRepairFee(order.id!, repairFee);
+                    Get.back();
+                  },
+                  child: Text('Simpan'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // bottomSheet(BuildContext context, order) {
