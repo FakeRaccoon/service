@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:service/controllers/home-controller.dart';
 import 'package:service/responsive.dart';
+import 'package:service/screens/payment-page.dart';
 import 'package:service/screens/service-proposal-page.dart';
 import 'package:service/screens/Sparepart/sparepart-page.dart';
 import 'package:service/screens/Technician/technician-page.dart';
@@ -71,6 +72,12 @@ class _MenuState extends State<Menu> {
             cardTitle: 'Sparepart',
             menuList: [
               {'menu': 'Sparepart', 'ontap': () => Get.to(() => SparePartPage())},
+            ],
+          ),
+          MenuCard(
+            cardTitle: 'Pembayaran',
+            menuList: [
+              {'menu': 'Pembayaran', 'ontap': () => Get.to(() => PaymentPage())},
             ],
           ),
         ],

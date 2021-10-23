@@ -54,6 +54,8 @@ class TechnicianDetailPage extends StatefulWidget {
 class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
   final controller = Get.put(DataDetailController());
 
+  var key = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,10 +73,8 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
           ),
         ),
       ),
-      bottomNavigationBar: kIsWeb
-          ? null
-          : BottomAppBar(
-              elevation: 4,
+      bottomNavigationBar: Responsive.isMobile(context)
+          ? BottomAppBar(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                 child: Row(
@@ -87,10 +87,18 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                         child: Text('Simpan'),
                       ),
                     ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: null,
+                        child: Text('Mulai Service'),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
+            )
+          : null,
       body: FutureBuilder<OrderDetail>(
         future: APIService().getOrderDetail(widget.id),
         builder: (BuildContext context, snapshot) {
@@ -100,6 +108,9 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
             return Obx(() {
               final order = controller.order.value;
               return SingleChildScrollView(
+                padding: Responsive.isMobile(context)
+                    ? EdgeInsets.symmetric(horizontal: defaultPadding / 2)
+                    : EdgeInsets.zero,
                 child: Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
@@ -209,7 +220,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(
-                              DateFormat('d MMMM y').format(controller.order.value.estimatedDate!),
+                              DateFormat('d MMMM y', 'id').format(controller.order.value.estimatedDate!),
                               style: AppStyle.bodyStyle,
                             ),
                           ),
@@ -309,7 +320,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                               );
                             },
                           ),
-                        SizedBox(height: 30),
+                        if (!Responsive.isMobile(context)) SizedBox(height: 30),
                         if (!Responsive.isMobile(context))
                           Align(
                             alignment: Alignment.centerRight,
@@ -374,53 +385,58 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
       padding: Get.mediaQuery.viewInsets,
       child: Padding(
         padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: IconButton(
-                icon: Icon(Icons.clear),
-                onPressed: () {
-                  Get.back();
-                  controller.repairFeeController.clear();
-                },
+        child: Form(
+          key: key,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    Get.back();
+                    controller.repairFeeController.clear();
+                  },
+                ),
+                title: Text('Biaya perbaikan', style: AppStyle.headerStyle),
               ),
-              title: Text('Biaya perbaikan', style: AppStyle.headerStyle),
-            ),
-            TextFormField(
-              controller: controller.repairFeeController,
-              validator: (value) {
-                if (value!.isEmpty) {
-                  return 'isi biaya perbaikan';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp('[0-9]')),
-                ThousandsFormatter(),
-              ],
-              decoration: InputDecoration(labelText: 'Biaya Perbaikan'),
-            ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: Get.width,
-              child: ElevatedButton(
-                onPressed: () async {
-                  int repairFee = int.parse(controller.repairFeeController.text.replaceAll(',', ''));
-                  controller.order.update((val) {
-                    val!.payment?.repairFee = repairFee;
-                  });
-                  controller.updateRepairFee(order.id!, repairFee);
-                  controller.repairFeeController.clear();
-                  Get.back();
+              TextFormField(
+                controller: controller.repairFeeController,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'isi biaya perbaikan';
+                  }
+                  return null;
                 },
-                child: Text('Simpan'),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                  ThousandsFormatter(),
+                ],
+                decoration: InputDecoration(labelText: 'Biaya Perbaikan'),
               ),
-            ),
-          ],
+              SizedBox(height: 20),
+              SizedBox(
+                width: Get.width,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (key.currentState!.validate()) {
+                      int repairFee = int.parse(controller.repairFeeController.text.replaceAll(',', ''));
+                      controller.order.update((val) {
+                        val!.payment?.repairFee = repairFee;
+                      });
+                      controller.updateRepairFee(order.id!, repairFee);
+                      controller.repairFeeController.clear();
+                      Get.back();
+                    }
+                  },
+                  child: Text('Simpan'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -431,43 +447,51 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
       padding: Get.mediaQuery.viewInsets,
       child: Padding(
         padding: const EdgeInsets.all(10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: IconButton(
-                icon: Icon(Icons.clear),
-                onPressed: () {
-                  Get.back();
-                  controller.problemController.clear();
+        child: Form(
+          key: key,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    Get.back();
+                    controller.problemController.clear();
+                  },
+                ),
+                title: Text(
+                  'Edit Masalah Mesin',
+                  style: AppStyle.headerStyle,
+                ),
+              ),
+              TextFormField(
+                validator: (value) {
+                  if (value!.isEmpty) return 'Isi masalah mesin';
                 },
+                controller: controller.problemController,
+                decoration: InputDecoration(labelText: 'Masalh Mesin'),
               ),
-              title: Text(
-                'Edit Masalah Mesin',
-                style: AppStyle.headerStyle,
+              SizedBox(height: 20),
+              SizedBox(
+                width: Get.width,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (key.currentState!.validate()) {
+                      controller.order.update((val) {
+                        val!.problem = controller.problemController.text;
+                      });
+                      controller.updateProblem(order.id!, controller.problemController.text);
+                      controller.problemController.clear();
+                      Get.back();
+                    }
+                  },
+                  child: Text('Simpan'),
+                ),
               ),
-            ),
-            TextFormField(
-              controller: controller.problemController,
-              decoration: InputDecoration(labelText: 'Masalh Mesin'),
-            ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: Get.width,
-              child: ElevatedButton(
-                onPressed: () {
-                  controller.order.update((val) {
-                    val!.problem = controller.problemController.text;
-                  });
-                  controller.updateProblem(order.id!, controller.problemController.text);
-                  controller.problemController.clear();
-                  Get.back();
-                },
-                child: Text('Simpan'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -476,11 +500,12 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
   Widget itemSearchBottomSheet() {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ListTile(
+              contentPadding: EdgeInsets.zero,
               leading: IconButton(
                 icon: Icon(Icons.clear),
                 onPressed: () {
@@ -498,6 +523,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                 controller.itemSearch.value = value;
               },
               decoration: InputDecoration(
+                contentPadding: EdgeInsets.zero,
                 hintText: 'Cari part',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -529,7 +555,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                             );
                           },
                           separatorBuilder: (BuildContext context, int index) {
-                            return Divider();
+                            return Divider(thickness: 1);
                           },
                         );
                       },

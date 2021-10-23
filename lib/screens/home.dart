@@ -23,9 +23,9 @@ class _HomeState extends State<Home> {
   final controller = Get.put(HomeController());
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<User>(
+    return FutureBuilder(
       future: APIService().userDetail(),
-      builder: (context, snapshot) {
+      builder: (context, AsyncSnapshot<User> snapshot) {
         if (snapshot.hasData) {
           return Responsive(
             mobile: Scaffold(
@@ -75,12 +75,20 @@ class _HomeState extends State<Home> {
                             child: Column(
                               children: [
                                 ListTile(
-                                  title: Text(snapshot.data!.name!),
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(snapshot.data!.name!.split(' ').map((e) => e.capitalize).join(' ')),
                                   subtitle: Text(snapshot.data!.role!.name),
-                                  trailing: IconButton(
-                                    tooltip: 'Logout',
-                                    icon: Icon(Icons.exit_to_app),
-                                    onPressed: () => APIService().logout(),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: SizedBox(
+                                    width: Get.width,
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        APIService().logout();
+                                      },
+                                      child: Text('Logout'),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -130,9 +138,7 @@ class HomeTabView extends StatelessWidget {
               unselectedLabelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
               labelColor: Colors.black,
               unselectedLabelColor: Colors.grey,
-              tabs: controller.tabs
-                  .map((e) => Tab(child: Text(e)))
-                  .toList(),
+              tabs: controller.tabs.map((e) => Tab(child: Text(e))).toList(),
             ),
           ),
           Expanded(

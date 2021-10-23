@@ -68,12 +68,12 @@ class DataDetailController extends GetxController {
 
   void updateOrderItemQty() {
     orderItem.forEach((element) async {
-      api.updateOrderItemQty(element.id!, element.qty!).then((value) {}, onError: (e) {});
+      api.updateOrderItem(element.id!, qty: element.qty).catchError((e) => print(e));
     });
   }
 
   void updateOrderPrice(int id, int price) async {
-    await api.updateOrderItemPrice(id, price).catchError((e) => print(e));
+    await api.updateOrderItem(id, price: price).catchError((e) => print(e));
     Get.rawSnackbar(message: 'Berhasil update harga part');
   }
 

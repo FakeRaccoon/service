@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:service/componen/term-and-condition.dart';
 import 'package:service/controllers/receipt-input-controller.dart';
 import 'package:service/models/item-model.dart';
@@ -63,254 +64,73 @@ class _ReceiptInputState extends State<ReceiptInput> {
   }
 
   Widget customCard() {
-    return Form(
-      key: _key,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    return SingleChildScrollView(
+      child: Form(
+        key: _key,
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          padding: EdgeInsets.all(10),
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('TANGGAL TERIMA',
-                      style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
-                  Spacer(),
-                  Text('JAM', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    DateFormat('d MMMM y').format(controller.dateTime.value).toString(),
-                    style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
+                  Row(
+                    children: [
+                      Text('TANGGAL TERIMA',
+                          style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                      Spacer(),
+                      Text('JAM', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, color: Colors.grey)),
+                    ],
                   ),
-                  Spacer(),
-                  Obx(
-                    () => Text(
-                      DateFormat.jm().format(controller.dateTime.value).toString(),
-                      style: GoogleFonts.sourceSansPro(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                  Row(
+                    children: [
+                      Text(
+                        DateFormat('d MMMM y', 'id').format(controller.dateTime.value).toString(),
+                        style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Divider(thickness: 1),
-              SizedBox(height: 10),
-              Text('Detail', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
-              TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Isi nama customer!';
-                  }
-                  return null;
-                },
-                controller: controller.customerController,
-                decoration: InputDecoration(labelText: 'Nama Customer'),
-              ),
-              // SizedBox(height: 20),
-              TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Isi nomor telfon customer!';
-                  }
-                  return null;
-                },
-                controller: controller.phoneNumberController,
-                decoration: InputDecoration(labelText: 'Nomor Telfon'),
-                keyboardType: TextInputType.number,
-              ),
-              // SizedBox(height: 20),
-              TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Isi alamat customer!';
-                  }
-                  return null;
-                },
-                controller: controller.addressController,
-                decoration: InputDecoration(labelText: 'Alamat'),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 10),
-              TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Isi nama barang!';
-                  }
-                  return null;
-                },
-                controller: controller.itemController,
-                decoration: InputDecoration(labelText: 'Nama Barang'),
-              ),
-              SizedBox(height: 30),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      activeColor: Colors.black,
-                      value: checkValue,
-                      onChanged: (newValue) {
-                        setState(() {
-                          checkValue = newValue!;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Text('Terima '),
-                  InkWell(
-                    onTap: () {},
-                    child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-              SizedBox(height: 30),
-              SizedBox(
-                width: Get.width,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    primary: Color.fromRGBO(80, 80, 80, 1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () {
-                    if (_key.currentState!.validate() && checkValue == true) {
-                      controller.createOrder();
-                    } else if (_key.currentState!.validate() && checkValue == false) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Terima Syarat dan Ketentuan'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.red,
-                      ));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Lengkapi data'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.red,
-                      ));
-                    }
-                  },
-                  child: Text('Simpan'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget webCustomCard() {
-    return Form(
-      key: _key,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Colors.grey[300]!,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Detail Customer & Barang',
-                style: GoogleFonts.sourceSansPro(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              Row(
-                children: [
-                  Obx(
-                    () => Visibility(
-                      visible: controller.isNewCustomer.isTrue ? true : false,
-                      child: Expanded(
-                        child: TextFormField(
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Isi nama customer!';
-                            }
-                            return null;
-                          },
-                          controller: controller.customerController,
-                          decoration: InputDecoration(labelText: 'Nama Customer'),
+                      Spacer(),
+                      Obx(
+                        () => Text(
+                          DateFormat.jm().format(controller.dateTime.value).toString(),
+                          style: GoogleFonts.sourceSansPro(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  Obx(
-                    () => Visibility(
-                      visible: controller.isNewCustomer.isTrue ? false : true,
-                      child: Expanded(
-                        child: TextFormField(
-                          onTap: () {
-                            Get.dialog(itemSearchDialog());
-                          },
-                          readOnly: true,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Isi nama customer!';
-                            }
-                            return null;
-                          },
-                          controller: controller.customerController,
-                          decoration: InputDecoration(labelText: 'Nama Customer', hintText: "Pilih Customer"),
-                        ),
-                      ),
-                    ),
+                  SizedBox(height: 10),
+                  Divider(thickness: 1),
+                  SizedBox(height: 10),
+                  Text('Detail', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
+                  TextFormField(
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Isi nama customer!';
+                      }
+                      return null;
+                    },
+                    controller: controller.customerController,
+                    decoration: InputDecoration(labelText: 'Nama Customer'),
                   ),
-                  SizedBox(width: 20),
-                  Obx(
-                    () => Visibility(
-                      visible: controller.isNewCustomer.isTrue ? true : false,
-                      child: Expanded(
-                        child: TextFormField(
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Isi nomor telfon customer!';
-                            }
-                            return null;
-                          },
-                          controller: controller.phoneNumberController,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          decoration: InputDecoration(labelText: 'Nomor Telfon'),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ),
+                  // SizedBox(height: 20),
+                  TextFormField(
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Isi nomor telfon customer!';
+                      }
+                      return null;
+                    },
+                    controller: controller.phoneNumberController,
+                    decoration: InputDecoration(labelText: 'Nomor Telfon'),
+                    keyboardType: TextInputType.number,
                   ),
-                  // SizedBox(width: 20),
-                  // Text('Customer Baru'),
-                  // SizedBox(width: 5),
-                  // Obx(
-                  //   () => CupertinoSwitch(
-                  //     activeColor: kPrimary,
-                  //     value: controller.isNewCustomer.value,
-                  //     onChanged: (value) {
-                  //       controller.isNewCustomer.toggle();
-                  //     },
-                  //   ),
-                  // ),
-                ],
-              ),
-              // SizedBox(height: 20),
-              Obx(
-                () => Visibility(
-                  visible: controller.isNewCustomer.isTrue ? true : false,
-                  child: TextFormField(
+                  // SizedBox(height: 20),
+                  TextFormField(
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Isi alamat customer!';
@@ -321,90 +141,358 @@ class _ReceiptInputState extends State<ReceiptInput> {
                     decoration: InputDecoration(labelText: 'Alamat'),
                     keyboardType: TextInputType.number,
                   ),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextFormField(
-                readOnly: true,
-                onTap: () {
-                  Get.dialog(
-                    itemSearchDialog(),
-                  );
-                },
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Isi nama barang!';
-                  }
-                  return null;
-                },
-                controller: controller.itemController,
-                decoration: InputDecoration(labelText: 'Nama Barang', hintText: 'Pilih Barang'),
-              ),
-              SizedBox(height: 30),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      activeColor: Colors.black,
-                      value: checkValue,
-                      onChanged: (newValue) {
-                        setState(() {
-                          checkValue = newValue!;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Text('Terima '),
-                  InkWell(
+                  SizedBox(height: 10),
+                  TextFormField(
                     onTap: () {
-                      Get.dialog(TermAndCondition());
+                      showMaterialModalBottomSheet(
+                        context: context,
+                        builder: (context) {
+                          return itemSearchBottomSheet();
+                        },
+                      );
                     },
-                    child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
+                    readOnly: true,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Isi nama barang!';
+                      }
+                      return null;
+                    },
+                    controller: controller.itemController,
+                    decoration: InputDecoration(labelText: 'Nama Barang'),
+                  ),
+                  SizedBox(height: 30),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          activeColor: Colors.black,
+                          value: checkValue,
+                          onChanged: (newValue) {
+                            setState(() {
+                              checkValue = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Text('Terima '),
+                      InkWell(
+                        onTap: () {},
+                        child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 30),
+                  SizedBox(
+                    width: Get.width,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: Color.fromRGBO(80, 80, 80, 1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        if (_key.currentState!.validate() && checkValue == true) {
+                          controller.createOrder();
+                        } else if (_key.currentState!.validate() && checkValue == false) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Terima Syarat dan Ketentuan'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Lengkapi data'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ));
+                        }
+                      },
+                      child: Text('Simpan'),
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: 30),
-              Align(
-                alignment: Alignment.centerRight,
-                child: SizedBox(
-                  height: 50,
-                  width: 200,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      primary: Color.fromRGBO(80, 80, 80, 1),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget webCustomCard() {
+    return SingleChildScrollView(
+      child: Form(
+        key: _key,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.grey[300]!,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Detail Customer & Barang',
+                  style: GoogleFonts.sourceSansPro(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Obx(
+                      () => Visibility(
+                        visible: controller.isNewCustomer.isTrue ? true : false,
+                        child: Expanded(
+                          child: TextFormField(
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Isi nama customer!';
+                              }
+                              return null;
+                            },
+                            controller: controller.customerController,
+                            decoration: InputDecoration(labelText: 'Nama Customer'),
+                          ),
+                        ),
+                      ),
                     ),
-                    onPressed: () {
-                      if (_key.currentState!.validate() && checkValue == true) {
-                        controller.createOrder();
-                      } else if (_key.currentState!.validate() && checkValue == false) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Terima Syarat dan Ketentuan'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.red,
-                        ));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Lengkapi data'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.red,
-                        ));
-                      }
-                    },
-                    child: Text(
-                      'Simpan',
-                      style: GoogleFonts.sourceSansPro(
-                        fontWeight: FontWeight.bold,
+                    Obx(
+                      () => Visibility(
+                        visible: controller.isNewCustomer.isTrue ? false : true,
+                        child: Expanded(
+                          child: TextFormField(
+                            onTap: () {
+                              Get.dialog(itemSearchDialog());
+                            },
+                            readOnly: true,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Isi nama customer!';
+                              }
+                              return null;
+                            },
+                            controller: controller.customerController,
+                            decoration: InputDecoration(labelText: 'Nama Customer', hintText: "Pilih Customer"),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 20),
+                    Obx(
+                      () => Visibility(
+                        visible: controller.isNewCustomer.isTrue ? true : false,
+                        child: Expanded(
+                          child: TextFormField(
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Isi nomor telfon customer!';
+                              }
+                              return null;
+                            },
+                            controller: controller.phoneNumberController,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(labelText: 'Nomor Telfon'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // SizedBox(width: 20),
+                    // Text('Customer Baru'),
+                    // SizedBox(width: 5),
+                    // Obx(
+                    //   () => CupertinoSwitch(
+                    //     activeColor: kPrimary,
+                    //     value: controller.isNewCustomer.value,
+                    //     onChanged: (value) {
+                    //       controller.isNewCustomer.toggle();
+                    //     },
+                    //   ),
+                    // ),
+                  ],
+                ),
+                // SizedBox(height: 20),
+                Obx(
+                  () => Visibility(
+                    visible: controller.isNewCustomer.isTrue ? true : false,
+                    child: TextFormField(
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Isi alamat customer!';
+                        }
+                        return null;
+                      },
+                      controller: controller.addressController,
+                      decoration: InputDecoration(labelText: 'Alamat'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextFormField(
+                  readOnly: true,
+                  onTap: () {
+                    Get.dialog(
+                      itemSearchDialog(),
+                    );
+                  },
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return 'Isi nama barang!';
+                    }
+                    return null;
+                  },
+                  controller: controller.itemController,
+                  decoration: InputDecoration(labelText: 'Nama Barang', hintText: 'Pilih Barang'),
+                ),
+                SizedBox(height: 30),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        activeColor: Colors.black,
+                        value: checkValue,
+                        onChanged: (newValue) {
+                          setState(() {
+                            checkValue = newValue!;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text('Terima '),
+                    InkWell(
+                      onTap: () {
+                        Get.dialog(TermAndCondition());
+                      },
+                      child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 30),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    height: 50,
+                    width: 200,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: Color.fromRGBO(80, 80, 80, 1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        if (_key.currentState!.validate() && checkValue == true) {
+                          controller.createOrder();
+                        } else if (_key.currentState!.validate() && checkValue == false) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Terima Syarat dan Ketentuan'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Lengkapi data'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ));
+                        }
+                      },
+                      child: Text(
+                        'Simpan',
+                        style: GoogleFonts.sourceSansPro(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget itemSearchBottomSheet() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cari Barang',
+              style: GoogleFonts.sourceSansPro(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            SizedBox(height: 20),
+            TextFormField(
+              onChanged: (String value) {
+                controller.itemSearch.value = value;
+              },
+              decoration: InputDecoration(
+                hintText: 'Cari barang',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: FutureBuilder<List<ItemModel>>(
+                future: controller.itemFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    controller.itemList.value = snapshot.data!;
+                    if (snapshot.data!.isEmpty) return Text('Terjadi Kesalahan');
+                    return Obx(
+                      () {
+                        if (controller.itemList.isEmpty) return Center(child: Text('Barang tidak ditemukan'));
+                        return ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: controller.itemList.length,
+                          itemBuilder: (context, index) {
+                            final item = controller.itemList[index];
+                            return ListTile(
+                              onTap: () {
+                                controller.itemController.text = item.itemName!;
+                                controller.itemId.value = item.id!;
+                                Get.back();
+                              },
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(item.itemName!),
+                              subtitle: Text(item.itemAlias!),
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) {
+                            return Divider();
+                          },
+                        );
+                      },
+                    );
+                  }
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -480,43 +568,6 @@ class _ReceiptInputState extends State<ReceiptInput> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class SuccessPage extends StatelessWidget {
-  final String message;
-  const SuccessPage({Key? key, required this.message}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        height: Get.height,
-        width: Get.width,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(color: Color(0xff8CC24A), shape: BoxShape.circle),
-              child: Icon(Icons.check, color: Colors.white, size: 50),
-            ),
-            SizedBox(height: 10),
-            Text('Success!', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text(message, style: GoogleFonts.sourceSansPro()),
-            SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                primary: Color(0xff8CC24A),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-              onPressed: () => Get.offNamed('/'),
-              child: Text('Selesai'),
-            ),
-          ],
         ),
       ),
     );

@@ -52,13 +52,20 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.light(primary: kPrimary),
         splashColor: Colors.transparent,
-        focusColor: Colors.black,
         highlightColor: Colors.transparent,
         hoverColor: Colors.transparent,
         iconTheme: IconThemeData(color: Colors.black),
       ),
       debugShowCheckedModeBanner: false,
       initialRoute: storage.hasData('token') ? '/' : '/login',
+      // home: Navigator(
+      //   pages: [
+      //     MaterialPage(
+      //       key: ValueKey('/home'),
+      //       child: Home(),
+      //     ),
+      //   ],
+      // ),
       getPages: [
         GetPage(name: '/', page: () => Root()),
         GetPage(name: '/login', page: () => ResponsiveLoginPage()),
@@ -77,8 +84,7 @@ class MyApp extends StatelessWidget {
 
 class MyBehavior extends ScrollBehavior {
   @override
-  Widget buildViewportChrome(
-      BuildContext context, Widget child, AxisDirection axisDirection) {
+  Widget buildViewportChrome(BuildContext context, Widget child, AxisDirection axisDirection) {
     return child;
   }
 }

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:service/controllers/data-controller.dart';
 import 'package:service/models/order-model.dart';
 import 'package:service/responsive.dart';
-import 'package:service/screens/Sparepart/sparepart-detail-page.dart';
 import 'package:service/services/api.dart';
 import 'package:service/style.dart';
 
@@ -99,12 +98,26 @@ class _SparePartListState extends State<SparePartList> {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      padding: Responsive.isMobile(context) ? EdgeInsets.symmetric(horizontal: defaultPadding / 2) : EdgeInsets.zero,
       controller: scrollController,
       shrinkWrap: true,
       itemCount: controller.hasMore.value ? controller.dataList.length + 1 : controller.dataList.length,
       itemBuilder: (BuildContext context, int index) {
         if (index == controller.dataList.length) {
           return _buildProgressIndicator();
+        }
+        final convert = controller.dataList[index].status;
+        late String status;
+        switch (convert) {
+          case 0:
+            status = 'Dalam Proses';
+            break;
+          case 1:
+            status = 'Menunggu Harga';
+            break;
+          case 2:
+            status = 'Dalam Pengerjaan';
+            break;
         }
         return Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
@@ -113,6 +126,21 @@ class _SparePartListState extends State<SparePartList> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    color: Colors.grey[200],
+                    child: Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Text(
+                        status,
+                        style: GoogleFonts.sourceSansPro(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 ListTile(
                   onTap: () => Get.toNamed('/part/detail', arguments: controller.dataList[index].id),
                   contentPadding: EdgeInsets.zero,
@@ -121,7 +149,7 @@ class _SparePartListState extends State<SparePartList> {
                     children: [
                       Icon(Icons.date_range_rounded, color: Colors.grey[600]),
                       SizedBox(width: 5),
-                      Text(DateFormat('d MMMM y').format(controller.dataList[index].createdAt!), style: header),
+                      Text(DateFormat('d MMMM y', 'id').format(controller.dataList[index].createdAt!), style: header),
                     ],
                   ),
                 ),

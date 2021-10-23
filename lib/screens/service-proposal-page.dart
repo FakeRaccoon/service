@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -9,6 +10,8 @@ import 'package:service/models/order-detail-model.dart';
 import 'package:service/models/order-model.dart';
 import 'package:service/responsive.dart';
 import 'package:service/services/api.dart';
+
+import '../style.dart';
 
 class ServiceProposal extends StatefulWidget {
   const ServiceProposal({Key? key}) : super(key: key);
@@ -128,6 +131,7 @@ class _OrderListState extends State<OrderList> {
     return RefreshIndicator(
       onRefresh: refresh,
       child: ListView.builder(
+        padding: Responsive.isMobile(context) ? EdgeInsets.symmetric(horizontal: defaultPadding / 2) : EdgeInsets.zero,
         physics: AlwaysScrollableScrollPhysics(),
         controller: scrollController,
         shrinkWrap: true,
@@ -140,7 +144,7 @@ class _OrderListState extends State<OrderList> {
           late String status;
           switch (convert) {
             case 0:
-              status = 'Cek Teknisi';
+              status = 'Dalam Proses';
               break;
           }
           return Card(
@@ -150,10 +154,19 @@ class _OrderListState extends State<OrderList> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    status,
-                    style: GoogleFonts.sourceSansPro(
-                      fontWeight: FontWeight.bold,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      color: Colors.grey[200],
+                      child: Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: Text(
+                          status,
+                          style: GoogleFonts.sourceSansPro(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   ListTile(
@@ -167,7 +180,7 @@ class _OrderListState extends State<OrderList> {
                       children: [
                         Icon(Icons.date_range_rounded, color: Colors.grey[600]),
                         SizedBox(width: 5),
-                        Text(DateFormat('d MMMM y').format(data[index].createdAt!), style: header),
+                        Text(DateFormat('d MMMM y', 'id').format(data[index].createdAt!), style: header),
                       ],
                     ),
                     trailing: Text(data[index].customer!.name!, style: header),
@@ -253,6 +266,25 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
           ),
         ),
       ),
+      bottomNavigationBar: Responsive.isMobile(context)
+          ? BottomAppBar(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        child: Text('Simpan'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
       body: FutureBuilder<OrderDetail>(
         future: APIService().getOrderDetail(id),
         builder: (context, snapshot) {
@@ -294,7 +326,8 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                               'Tanggal Service',
                               style: titleStyle,
                             ),
-                            trailing: Text('${DateFormat('d MMMM y, hh:mm').format(snapshot.data!.createdAt!)} WIB'),
+                            trailing:
+                                Text('${DateFormat('d MMMM y, hh:mm', 'id').format(snapshot.data!.createdAt!)} WIB'),
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -304,7 +337,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                             ),
                             trailing: order.estimatedDate == null
                                 ? Text('Belum ada tanggal perkiraan selesai')
-                                : Text('${DateFormat('d MMMM y').format(order.estimatedDate!)}'),
+                                : Text('${DateFormat('d MMMM y', 'id').format(order.estimatedDate!)}'),
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -317,7 +350,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(
-                              'Msalah Barang',
+                              'Masalah Barang',
                               style: titleStyle,
                             ),
                             trailing: Text('${order.problem ?? 'Masalah barang belum ditetapkan'}'),
@@ -410,7 +443,8 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text('Dp (75% dari Total)', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
+                            title: Text('Dp (75% dari Total)',
+                                style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
                             trailing: Text('Rp${currency.format(total * 75 / 100)}',
                                 style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
                           ),
@@ -439,22 +473,23 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 20),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: SizedBox(
-                              height: 50,
-                              width: 200,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  primary: Color.fromRGBO(80, 80, 80, 1),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          if (!Responsive.isMobile(context)) SizedBox(height: 30),
+                          if (!Responsive.isMobile(context))
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: SizedBox(
+                                height: 50,
+                                width: 200,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    primary: Color.fromRGBO(80, 80, 80, 1),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  ),
+                                  onPressed: () {},
+                                  child: Text('Simpan'),
                                 ),
-                                onPressed: () {},
-                                child: Text('Simpan'),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),

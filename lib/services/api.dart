@@ -20,8 +20,8 @@ import 'package:service/screens/responsive-login-page.dart';
 import 'package:service/services/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// const BaseUrl = 'http://10.0.2.2:8000';
-const baseUrl = 'http://192.168.5.114:3000';
+const baseUrl = 'http://10.0.2.2:3000';
+// const baseUrl = 'http://192.168.5.114:3000';
 
 const TIMEOUT_DURATION = 10 * 1000;
 
@@ -51,6 +51,19 @@ class APIService {
     }
   }
 
+  Future _retry(RequestOptions requestOptions) async {
+    final options = new Options(
+      method: requestOptions.method,
+      headers: requestOptions.headers,
+    );
+    return dio.request<dynamic>(
+      requestOptions.path,
+      data: requestOptions.data,
+      queryParameters: requestOptions.queryParameters,
+      options: options,
+    );
+  }
+
   Future login(username, password) async {
     try {
       final response = await dio.post(baseUrl + '/auth/login', data: {
@@ -74,73 +87,49 @@ class APIService {
     }
   }
 
-  Future authCheck() async {
-    try {
-      dio.interceptors.clear();
-      dio.interceptors.add(InterceptorsWrapper(onError: (DioError error, handler) async {
-        if (error.response?.statusCode == 403 || error.response?.statusCode == 401) {
-          try {
-            await refreshToken().then((value) async {
-              error.requestOptions.headers["Authorization"] = "Bearer " + box.read('token');
-              final opts = new Options(
-                method: error.requestOptions.method,
-                headers: error.requestOptions.headers,
-              );
-              final cloneReq = await dio.request(
-                error.requestOptions.path,
-                options: opts,
-                data: error.requestOptions.data,
-                queryParameters: error.requestOptions.queryParameters,
-              );
-              return handler.resolve(cloneReq);
-            });
-          } catch (e) {
-            // TODO
-          }
-        }
-      }));
-      route.Get.offAllNamed('/home');
-    } on DioError {
-      route.Get.offAllNamed('/login');
-    }
-  }
-
   Future<User> userDetail() async {
     try {
       dio.interceptors.clear();
-      dio.interceptors.add(InterceptorsWrapper(onError: (DioError error, handler) async {
-        if (error.response?.statusCode == 403 || error.response?.statusCode == 401) {
-          try {
-            await refreshToken().then((value) async {
-              error.requestOptions.headers["Authorization"] = "Bearer " + box.read('token');
-              final opts = new Options(
-                method: error.requestOptions.method,
-                headers: error.requestOptions.headers,
-              );
-              final cloneReq = await dio.request(
-                error.requestOptions.path,
-                options: opts,
-                data: error.requestOptions.data,
-                queryParameters: error.requestOptions.queryParameters,
-              );
-              return handler.resolve(cloneReq);
-            });
-          } catch (e) {
-            // TODO
-          }
-        }
-      }));
-      dio.options.headers["Authorization"] = "Bearer ${box.read('token')}";
-      final refresh = await dio.get(baseUrl + '/users/detail');
-      return userFromJson(jsonEncode(refresh.data['result']));
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
+      final response = await dio.get(baseUrl + '/users/detail');
+      return userFromJson(json.encode(response.data['result']));
     } on DioError catch (e) {
-      print(e.response?.statusCode);
       throw e.message;
     }
   }
 
   Future<void> logout() async {
     try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
       await dio.post(baseUrl + '/auth/logout', data: {"token": box.read('refreshToken')});
       await box.erase();
       route.Get.offAllNamed('/login');
@@ -151,6 +140,22 @@ class APIService {
 
   Future getUser(String username) async {
     try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
       final response = await dio.get(baseUrl + '/users', queryParameters: {'username': username.trim()});
       if (response.data['result'] == null) {
         print(response.data);
@@ -164,6 +169,22 @@ class APIService {
 
   Future<List<Order>> getOrder({int? status, int? page}) async {
     try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
       final response = await dio.get(baseUrl + '/orders', queryParameters: {"page": page, "status": status});
       return orderFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
@@ -174,6 +195,22 @@ class APIService {
 
   Future<List<ItemModel>> getItem({String? search}) async {
     try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
       final response = await dio.get(
         baseUrl + '/items',
         queryParameters: {"search": search},
@@ -187,6 +224,22 @@ class APIService {
 
   Future<OrderDetail> getOrderDetail(int id) async {
     try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
       final response = await dio.get(baseUrl + '/orders/$id');
       return orderDetailFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
@@ -195,8 +248,32 @@ class APIService {
     }
   }
 
-  Future updateOrder(int id, {DateTime? estimatedDate, String? problem, int? status, int? repairFee, int? dp, String? type}) async {
+  Future updateOrder(
+    int id, {
+    DateTime? estimatedDate,
+    String? problem,
+    int? status,
+    int? repairFee,
+    int? dp,
+    String? type,
+  }) async {
     try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
       var formData = FormData();
       if (estimatedDate != null) formData.fields.add(MapEntry('estimated_date', '$estimatedDate'));
       if (repairFee != null) formData.fields.add(MapEntry('repair_fee', '$repairFee'));
@@ -223,21 +300,15 @@ class APIService {
     }
   }
 
-  Future updateOrderItemQty(int id, int qty) async {
+  Future updateOrderItem(int id, {int? qty, int? price}) async {
     try {
-      final response = await dio.put(baseUrl + '/order-items/$id', data: {"qty": qty});
+      var formData = FormData();
+      if (qty != null) formData.fields.add(MapEntry('qty', '$qty'));
+      if (price != null) formData.fields.add(MapEntry('qty', '$price'));
+      final response = await dio.put(baseUrl + '/order-items/$id', data: formData);
       return response.data;
     } on DioError catch (e) {
       print(e);
-      ErrorHandling.throwError(e);
-    }
-  }
-
-  Future updateOrderItemPrice(int id, int price) async {
-    try {
-      final response = await dio.put(baseUrl + '/order-items/$id', data: {"price": price});
-      return response.data;
-    } on DioError catch (e) {
       ErrorHandling.throwError(e);
     }
   }

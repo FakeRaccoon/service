@@ -1,9 +1,10 @@
 import 'dart:async';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:service/componen/loading-page.dart';
+import 'package:service/componen/success-page.dart';
 import 'package:service/models/item-model.dart';
+import 'package:service/screens/error-page.dart';
 import 'package:service/screens/receipt_input.dart';
 import 'package:service/services/api.dart';
 
@@ -29,8 +30,9 @@ class ReceiptInputController extends GetxController {
     itemList.assignAll(response);
   }
 
-  void createOrder() async {
+  Future<void> createOrder() async {
     try {
+      Get.off(() => LoadingPage(message: 'Transaksi dalam proses.'));
       await APIService().createOrder(
         customerController.text,
         addressController.text,
@@ -41,9 +43,9 @@ class ReceiptInputController extends GetxController {
       phoneNumberController.clear();
       addressController.clear();
       itemController.clear();
-      Get.to(() => SuccessPage(message: 'Berhasil buat pesanan baru.'));
-    } on DioError catch (e) {
-      print(e);
+      Get.to(() => SuccessPage(message: 'Berhasil buat transaksi baru.'));
+    } on Exception catch (e) {
+      Get.to(() => ErrorPage(message: 'Gagal memproses transaksi, coba beberapa saat lagi'));
     }
   }
 

@@ -105,12 +105,26 @@ class _TechnicianListState extends State<TechnicianList> {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      padding: Responsive.isMobile(context) ? EdgeInsets.symmetric(horizontal: defaultPadding / 2) : EdgeInsets.zero,
       controller: scrollController,
       shrinkWrap: true,
       itemCount: hasMore ? data.length + 1 : data.length,
       itemBuilder: (BuildContext context, int index) {
         if (index == data.length) {
           return _buildProgressIndicator();
+        }
+        final convert = data[index].status;
+        late String status;
+        switch (convert) {
+          case 0:
+            status = 'Dalam Proses';
+            break;
+          case 1:
+            status = 'Menunggu Harga';
+            break;
+          case 2:
+            status = 'Dalam Pengerjaan';
+            break;
         }
         return Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -119,6 +133,21 @@ class _TechnicianListState extends State<TechnicianList> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    color: Colors.grey[200],
+                    child: Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Text(
+                        status,
+                        style: GoogleFonts.sourceSansPro(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 ListTile(
                   onTap: () => Get.toNamed('/service/detail', arguments: data[index].id),
                   contentPadding: EdgeInsets.zero,
@@ -127,7 +156,7 @@ class _TechnicianListState extends State<TechnicianList> {
                     children: [
                       Icon(Icons.date_range_rounded, color: Colors.grey[600]),
                       SizedBox(width: 5),
-                      Text(DateFormat('d MMMM y').format(data[index].createdAt!), style: header),
+                      Text(DateFormat('d MMMM y', 'id').format(data[index].createdAt!), style: header),
                     ],
                   ),
                 ),

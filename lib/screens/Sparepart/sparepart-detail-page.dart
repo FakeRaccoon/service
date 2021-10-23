@@ -73,6 +73,32 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
           ),
         ),
       ),
+      bottomNavigationBar: Responsive.isMobile(context)
+          ? BottomAppBar(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        child: Text('Simpan'),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: null,
+                        child: Text('Tetapkan Harga'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
       body: FutureBuilder<OrderDetail>(
         future: APIService().getOrderDetail(widget.id),
         builder: (BuildContext context, snapshot) {
@@ -81,17 +107,22 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
             return Obx(() {
               final order = controller.order.value;
               return SingleChildScrollView(
+                padding: Responsive.isMobile(context)
+                    ? EdgeInsets.symmetric(horizontal: defaultPadding / 2)
+                    : EdgeInsets.zero,
                 child: Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
                   child: Padding(
-                    padding: const EdgeInsets.all(defaultPadding / 2),
+                    padding: const EdgeInsets.all(defaultPadding),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(order.item!.itemName!, style: AppStyle.headerStyle),
-                        SizedBox(height: 20),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(order.item!.itemName!, style: AppStyle.headerStyle),
+                        ),
                         Text('Part yang dibutuhkan', style: AppStyle.headerStyle),
                         if (order.orderItems!.isNotEmpty)
                           ListView.builder(
@@ -122,32 +153,53 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                           )
                         else
                           Text('Belum ada list sparepart'),
-                        SizedBox(height: 30),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                height: 50,
-                                width: 200,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    primary: Color.fromRGBO(80, 80, 80, 1),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  onPressed: () {},
-                                  child: Text(
-                                    'Simpan',
-                                    style: GoogleFonts.sourceSansPro(
-                                      fontWeight: FontWeight.bold,
+                        if (!Responsive.isMobile(context)) SizedBox(height: 30),
+                        if (!Responsive.isMobile(context))
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  height: 50,
+                                  width: 200,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Color.fromRGBO(80, 80, 80, 1),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () {
+                                      Get.back();
+                                    },
+                                    child: Text(
+                                      'Simpan',
+                                      style: GoogleFonts.sourceSansPro(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 10),
+                                SizedBox(
+                                  height: 50,
+                                  width: 200,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Color.fromRGBO(80, 80, 80, 1),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () {},
+                                    child: Text(
+                                      'Tetapkan Harga',
+                                      style: GoogleFonts.sourceSansPro(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
