@@ -14,7 +14,15 @@ class TechnicianPage extends StatefulWidget {
   _TechnicianPageState createState() => _TechnicianPageState();
 }
 
-class _TechnicianPageState extends State<TechnicianPage> {
+class _TechnicianPageState extends State<TechnicianPage> with TickerProviderStateMixin {
+  late TabController tabController;
+  var tabList = ['Proses Pengecekan', 'Siap Dikerjakan', 'Dalam Pengerjaan', 'Selesai Service'];
+  @override
+  void initState() {
+    tabController = TabController(length: 4, vsync: this);
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,29 +36,94 @@ class _TechnicianPageState extends State<TechnicianPage> {
               elevation: 0,
               backgroundColor: Colors.white,
             ),
-      body: FutureBuilder<List<Order>>(
-        future: APIService().getOrder(status: 0),
-        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-          if (snapshot.hasData) {
-            if (Responsive.isMobile(context)) {
-              return TechnicianList(order: snapshot.data);
-            }
-            return Container(
-              height: Get.height * .70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                ),
-              ),
-              child: TechnicianList(
-                order: snapshot.data,
-              ),
-            );
-          }
-          return Center(child: CircularProgressIndicator());
-        },
+      body: Responsive(
+        mobile: technicianPageContent(),
+        tablet: Container(
+          height: Get.height * .70,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.grey[300]!,
+            ),
+          ),
+          child: technicianPageContent(),
+        ),
+        web: Container(
+          height: Get.height * .70,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.grey[300]!,
+            ),
+          ),
+          child: technicianPageContent(),
+        ),
       ),
+    );
+  }
+
+  Widget technicianPageContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TabBar(
+          isScrollable: true,
+          controller: tabController,
+          indicatorColor: kPrimary,
+          labelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.grey,
+          tabs: tabList.map((e) => Tab(child: Text(e))).toList(),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: tabController,
+            children: [
+              FutureBuilder(
+                future: APIService().getOrder(fromStatus: 0, toStatus: 0),
+                builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                    return TechnicianList(order: snapshot.data!);
+                  }
+                  return Center(child: CircularProgressIndicator());
+                },
+              ),
+              FutureBuilder(
+                future: APIService().getOrder(fromStatus: 3, toStatus: 3),
+                builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                    return TechnicianList(order: snapshot.data!);
+                  }
+                  return Center(child: CircularProgressIndicator());
+                },
+              ),
+              FutureBuilder(
+                future: APIService().getOrder(fromStatus: 4, toStatus: 4),
+                builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                    return TechnicianList(order: snapshot.data!);
+                  }
+                  return Center(child: CircularProgressIndicator());
+                },
+              ),
+              FutureBuilder(
+                future: APIService().getOrder(fromStatus: 5, toStatus: 5),
+                builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                    return TechnicianList(order: snapshot.data!);
+                  }
+                  return Center(child: CircularProgressIndicator());
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -80,7 +153,7 @@ class _TechnicianListState extends State<TechnicianList> {
     scrollController = ScrollController();
     scrollController.addListener(() async {
       if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        final value = await APIService().getOrder(page: currentPage + 1, status: 0);
+        final value = await APIService().getOrder(page: currentPage + 1, fromStatus: 0, toStatus: 0);
         if (value.isEmpty) {
           setState(() {
             hasMore = false;
@@ -133,25 +206,27 @@ class _TechnicianListState extends State<TechnicianList> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    color: Colors.grey[200],
-                    child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Text(
-                        status,
-                        style: GoogleFonts.sourceSansPro(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                // Align(
+                //   alignment: Alignment.centerLeft,
+                //   child: Container(
+                //     color: Colors.grey[200],
+                //     child: Padding(
+                //       padding: const EdgeInsets.all(5),
+                //       child: Text(
+                //         status,
+                //         style: GoogleFonts.sourceSansPro(
+                //           fontWeight: FontWeight.w600,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
                 ListTile(
                   onTap: () => Get.toNamed('/service/detail', arguments: data[index].id),
                   contentPadding: EdgeInsets.zero,
-                  title: Text(data[index].item!.itemName, style: content),
+                  title: data[index].manualItem == null
+                      ? Text(data[index].item!.itemName!, style: content)
+                      : Text(data[index].manualItem!, style: content),
                   subtitle: Row(
                     children: [
                       Icon(Icons.date_range_rounded, color: Colors.grey[600]),

@@ -14,6 +14,8 @@ class ReceiptInputController extends GetxController {
   late TextEditingController phoneNumberController;
   late TextEditingController addressController;
   late TextEditingController itemController;
+  late TextEditingController manualItemController;
+  late TextEditingController itemConditionController;
   late TextEditingController problemController;
   var dateTime = DateTime.now().obs;
   var itemSearch = ''.obs;
@@ -22,6 +24,8 @@ class ReceiptInputController extends GetxController {
 
   var itemList = [ItemModel()].obs;
   var itemId = 0.obs;
+
+  var isSwitched = false.obs;
 
   var isNewCustomer = true.obs;
 
@@ -37,15 +41,17 @@ class ReceiptInputController extends GetxController {
         customerController.text,
         addressController.text,
         int.parse(phoneNumberController.text),
-        itemId.value,
+        itemConditionController.text,
+        itemId: itemId.value == 0 ? null : itemId.value,
+        manualItem: manualItemController.text.isEmpty ? null : manualItemController.text,
       );
       customerController.clear();
       phoneNumberController.clear();
       addressController.clear();
       itemController.clear();
-      Get.to(() => SuccessPage(message: 'Berhasil buat transaksi baru.'));
+      Get.off(() => SuccessPage(message: 'Berhasil buat transaksi baru.'));
     } on Exception catch (e) {
-      Get.to(() => ErrorPage(message: 'Gagal memproses transaksi, coba beberapa saat lagi'));
+      Get.off(() => ErrorPage(message: 'Gagal memproses transaksi, coba beberapa saat lagi'));
     }
   }
 
@@ -55,10 +61,12 @@ class ReceiptInputController extends GetxController {
     debounce(itemSearch, (value) => getItem(value.toString()));
     itemFuture = APIService().getItem();
     customerController = TextEditingController();
+    manualItemController = TextEditingController();
     phoneNumberController = TextEditingController();
     addressController = TextEditingController();
     itemController = TextEditingController();
     problemController = TextEditingController();
+    itemConditionController = TextEditingController();
     timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
       dateTime.value = DateTime.now();
     });
@@ -68,6 +76,8 @@ class ReceiptInputController extends GetxController {
   void onClose() {
     super.onClose();
     customerController.dispose();
+    manualItemController.dispose();
+    itemConditionController.dispose();
     phoneNumberController.dispose();
     addressController.dispose();
     itemController.dispose();

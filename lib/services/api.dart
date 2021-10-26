@@ -20,8 +20,9 @@ import 'package:service/screens/responsive-login-page.dart';
 import 'package:service/services/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const baseUrl = 'http://10.0.2.2:3000';
-// const baseUrl = 'http://192.168.5.114:3000';
+// const baseUrl = 'http://10.0.2.2:3000';
+const baseUrl = 'http://192.168.5.114:3000';
+const uploadUrl = 'http://192.168.5.114:4000';
 
 const TIMEOUT_DURATION = 10 * 1000;
 
@@ -29,7 +30,14 @@ class APIService {
   final box = GetStorage();
 
   static var options = BaseOptions(
-    baseUrl: '$baseUrl',
+    baseUrl: baseUrl,
+    connectTimeout: TIMEOUT_DURATION,
+    receiveTimeout: TIMEOUT_DURATION,
+    sendTimeout: TIMEOUT_DURATION,
+    receiveDataWhenStatusError: true,
+  );
+  static var options2 = BaseOptions(
+    baseUrl: uploadUrl,
     connectTimeout: TIMEOUT_DURATION,
     receiveTimeout: TIMEOUT_DURATION,
     sendTimeout: TIMEOUT_DURATION,
@@ -37,19 +45,7 @@ class APIService {
   );
 
   Dio dio = new Dio(options);
-
-  Future getToken() async {
-    print('Refresh Token Called');
-    try {
-      final response = await dio.post(baseUrl + '/auth/token', data: {
-        "token": '${box.read('refreshToken')}',
-      });
-      await box.write('token', response.data['token']);
-      refreshToken();
-    } on DioError catch (e) {
-      print(e.message);
-    }
-  }
+  Dio dio2 = new Dio(options2);
 
   Future _retry(RequestOptions requestOptions) async {
     final options = new Options(
@@ -62,6 +58,16 @@ class APIService {
       queryParameters: requestOptions.queryParameters,
       options: options,
     );
+  }
+
+  Future uploadImage(String path) async {
+    try {
+      var formData = FormData.fromMap({'image': await MultipartFile.fromFile(path)});
+      final response = await dio2.post(uploadUrl, data: formData);
+      return response.data;
+    } on DioError catch (e) {
+      throw e.message;
+    }
   }
 
   Future login(username, password) async {
@@ -78,10 +84,10 @@ class APIService {
 
   Future<void> refreshToken() async {
     try {
-      final refresh = await dio.post(baseUrl + '/auth/token', data: {
+      final response = await dio.post(baseUrl + '/auth/token', data: {
         "token": '${box.read('refreshToken')}',
       });
-      await box.write('token', refresh.data['token']);
+      await box.write('token', response.data['token']);
     } on DioError catch (e) {
       throw e.message;
     }
@@ -105,6 +111,7 @@ class APIService {
           },
         ),
       );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
       final response = await dio.get(baseUrl + '/users/detail');
       return userFromJson(json.encode(response.data['result']));
     } on DioError catch (e) {
@@ -130,11 +137,11 @@ class APIService {
           },
         ),
       );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
       await dio.post(baseUrl + '/auth/logout', data: {"token": box.read('refreshToken')});
       await box.erase();
-      route.Get.offAllNamed('/login');
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 
@@ -156,6 +163,7 @@ class APIService {
           },
         ),
       );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
       final response = await dio.get(baseUrl + '/users', queryParameters: {'username': username.trim()});
       if (response.data['result'] == null) {
         print(response.data);
@@ -163,11 +171,11 @@ class APIService {
       print(response.data);
       return userFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 
-  Future<List<Order>> getOrder({int? status, int? page}) async {
+  Future<List<Order>> getOrder({int? fromStatus, int? toStatus, int? page}) async {
     try {
       dio.interceptors.clear();
       dio.interceptors.add(
@@ -185,10 +193,14 @@ class APIService {
           },
         ),
       );
-      final response = await dio.get(baseUrl + '/orders', queryParameters: {"page": page, "status": status});
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+      final response = await dio.get(baseUrl + '/orders', queryParameters: {
+        "page": page,
+        "fromStatus": fromStatus,
+        "toStatus": toStatus,
+      });
       return orderFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
       throw e.message;
     }
   }
@@ -211,13 +223,13 @@ class APIService {
           },
         ),
       );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
       final response = await dio.get(
         baseUrl + '/items',
         queryParameters: {"search": search},
       );
       return itemFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
       throw e.message;
     }
   }
@@ -240,10 +252,10 @@ class APIService {
           },
         ),
       );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
       final response = await dio.get(baseUrl + '/orders/$id');
       return orderDetailFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
       throw e.message;
     }
   }
@@ -274,6 +286,7 @@ class APIService {
           },
         ),
       );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
       var formData = FormData();
       if (estimatedDate != null) formData.fields.add(MapEntry('estimated_date', '$estimatedDate'));
       if (repairFee != null) formData.fields.add(MapEntry('repair_fee', '$repairFee'));
@@ -288,6 +301,34 @@ class APIService {
     }
   }
 
+  Future updatePayment(int id, {double? dp}) async {
+    try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+      var formData = FormData();
+      if (dp != null) formData.fields.add(MapEntry('dp', '$dp'));
+      final response = await dio.put(baseUrl + '/payment/$id', data: formData);
+      return response.data;
+    } on DioError catch (e) {
+      throw e.message;
+    }
+  }
+
   Future createOrderItem(int orderId, int itemId) async {
     try {
       final response = await dio.post(baseUrl + '/order-items', data: {
@@ -296,7 +337,7 @@ class APIService {
       });
       return response.data;
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 
@@ -304,12 +345,11 @@ class APIService {
     try {
       var formData = FormData();
       if (qty != null) formData.fields.add(MapEntry('qty', '$qty'));
-      if (price != null) formData.fields.add(MapEntry('qty', '$price'));
+      if (price != null) formData.fields.add(MapEntry('price', '$price'));
       final response = await dio.put(baseUrl + '/order-items/$id', data: formData);
       return response.data;
     } on DioError catch (e) {
-      print(e);
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 
@@ -318,7 +358,7 @@ class APIService {
       final response = await dio.delete(baseUrl + '/order-items/$id');
       return response.data;
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 
@@ -331,11 +371,18 @@ class APIService {
       print(response.data);
       return response.data;
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 
-  Future createOrder(String name, String address, int contact, int itemId) async {
+  Future createOrder(
+    String name,
+    String address,
+    int contact,
+    String condition, {
+    int? itemId,
+    String? manualItem,
+  }) async {
     try {
       final response = await dio.post(baseUrl + '/orders', data: {
         "name": name,
@@ -343,10 +390,12 @@ class APIService {
         "address": address,
         "contact": contact,
         "item_id": itemId,
+        "manual_item": manualItem,
+        "condition": condition,
       });
       return response.data;
     } on DioError catch (e) {
-      ErrorHandling.throwError(e);
+      throw e.message;
     }
   }
 }

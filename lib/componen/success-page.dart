@@ -29,7 +29,7 @@ class SuccessPage extends StatelessWidget {
                 primary: Color(0xff8CC24A),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
-              onPressed: () => Get.offNamed('/'),
+              onPressed: () => Get.offAllNamed('/'),
               child: Text('Selesai'),
             ),
           ],

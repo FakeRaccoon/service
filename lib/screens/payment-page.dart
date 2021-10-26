@@ -57,7 +57,7 @@ class _PaymentPageState extends State<PaymentPage> {
               physics: NeverScrollableScrollPhysics(),
               children: [
                 FutureBuilder<List<Order>>(
-                  future: APIService().getOrder(status: 0),
+                  future: APIService().getOrder(fromStatus: 0, toStatus: 0),
                   builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
                     if (snapshot.hasData) {
                       if (Responsive.isMobile(context)) return PaymentList(order: snapshot.data);
@@ -78,7 +78,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   },
                 ),
                 FutureBuilder(
-                  future: APIService().getOrder(status: 0),
+                  future: APIService().getOrder(fromStatus: 0, toStatus: 0),
                   builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
                     if (snapshot.hasData) {
                       if (Responsive.isMobile(context)) return PaymentList(order: snapshot.data!);
@@ -126,7 +126,7 @@ class _PaymentListState extends State<PaymentList> {
     scrollController = ScrollController();
     scrollController.addListener(() async {
       if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        final value = await APIService().getOrder(page: currentPage + 1, status: 0);
+        final value = await APIService().getOrder(page: currentPage + 1, fromStatus: 0, toStatus: 0);
         if (value.isEmpty) {
           setState(() {
             hasMore = false;
@@ -171,7 +171,7 @@ class _PaymentListState extends State<PaymentList> {
                 ListTile(
                   onTap: () => Get.toNamed('/service/detail', arguments: data[index].id),
                   contentPadding: EdgeInsets.zero,
-                  title: Text(data[index].item!.itemName, style: content),
+                  title: Text(data[index].item!.itemName!, style: content),
                   subtitle: Row(
                     children: [
                       Icon(Icons.date_range_rounded, color: Colors.grey[600]),

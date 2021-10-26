@@ -73,32 +73,6 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
           ),
         ),
       ),
-      bottomNavigationBar: Responsive.isMobile(context)
-          ? BottomAppBar(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        child: Text('Simpan'),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: null,
-                        child: Text('Tetapkan Harga'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : null,
       body: FutureBuilder<OrderDetail>(
         future: APIService().getOrderDetail(widget.id),
         builder: (BuildContext context, snapshot) {
@@ -106,104 +80,136 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
             controller.order.value = snapshot.data!;
             return Obx(() {
               final order = controller.order.value;
-              return SingleChildScrollView(
-                padding: Responsive.isMobile(context)
-                    ? EdgeInsets.symmetric(horizontal: defaultPadding / 2)
-                    : EdgeInsets.zero,
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(order.item!.itemName!, style: AppStyle.headerStyle),
-                        ),
-                        Text('Part yang dibutuhkan', style: AppStyle.headerStyle),
-                        if (order.orderItems!.isNotEmpty)
-                          ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: order.orderItems!.length,
-                            itemBuilder: (context, index) {
-                              return ListTile(
-                                onTap: () {
-                                  itemsIndex = index;
-                                  if (!Responsive.isMobile(context))
-                                    Get.dialog(buildDialog(order, index));
-                                  else
-                                    showMaterialModalBottomSheet(
-                                      context: context,
-                                      builder: (context) {
-                                        return itemPriceBottomSheet(order);
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: Responsive.isMobile(context)
+                          ? EdgeInsets.symmetric(horizontal: defaultPadding / 2)
+                          : EdgeInsets.zero,
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(defaultPadding),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: order.manualItem == null
+                                    ? Text(order.item!.itemName!, style: AppStyle.headerStyle)
+                                    : Text(order.manualItem!, style: AppStyle.headerStyle),
+                              ),
+                              Text('Part yang dibutuhkan', style: AppStyle.headerStyle),
+                              if (order.orderItems!.isNotEmpty)
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: order.orderItems!.length,
+                                  itemBuilder: (context, index) {
+                                    return ListTile(
+                                      onTap: () {
+                                        itemsIndex = index;
+                                        if (!Responsive.isMobile(context))
+                                          Get.dialog(buildDialog(order, index));
+                                        else
+                                          showMaterialModalBottomSheet(
+                                            context: context,
+                                            builder: (context) {
+                                              return itemPriceBottomSheet(order);
+                                            },
+                                          );
                                       },
+                                      contentPadding: EdgeInsets.only(right: 15),
+                                      title: Text(order.orderItems![index].item!.itemName!),
+                                      subtitle: order.orderItems![index].price != null
+                                          ? Text('Rp${currency.format(order.orderItems![index].price)}')
+                                          : Text('Harga belum ditentukan'),
+                                      trailing: Text('x${order.orderItems![index].qty!}'),
                                     );
-                                },
-                                contentPadding: EdgeInsets.only(right: 15),
-                                title: Text(order.orderItems![index].item!.itemName!),
-                                subtitle: order.orderItems![index].price != null
-                                    ? Text('Rp${currency.format(order.orderItems![index].price)}')
-                                    : Text('Harga belum ditentukan'),
-                                trailing: Text('x${order.orderItems![index].qty!}'),
-                              );
-                            },
-                          )
-                        else
-                          Text('Belum ada list sparepart'),
-                        if (!Responsive.isMobile(context)) SizedBox(height: 30),
-                        if (!Responsive.isMobile(context))
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  height: 50,
-                                  width: 200,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      primary: Color.fromRGBO(80, 80, 80, 1),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    onPressed: () {
-                                      Get.back();
-                                    },
-                                    child: Text(
-                                      'Simpan',
-                                      style: GoogleFonts.sourceSansPro(
-                                        fontWeight: FontWeight.bold,
+                                  },
+                                )
+                              else
+                                Text('Belum ada list sparepart'),
+                              if (!Responsive.isMobile(context)) SizedBox(height: 30),
+                              if (!Responsive.isMobile(context))
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        height: 50,
+                                        width: 200,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            primary: Color.fromRGBO(80, 80, 80, 1),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                          onPressed: () {
+                                            Get.back();
+                                          },
+                                          child: Text(
+                                            'Simpan',
+                                            style: GoogleFonts.sourceSansPro(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      SizedBox(width: 10),
+                                      SizedBox(
+                                        height: 50,
+                                        width: 200,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            primary: Color.fromRGBO(80, 80, 80, 1),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                          onPressed: () {},
+                                          child: Text(
+                                            'Tetapkan Harga',
+                                            style: GoogleFonts.sourceSansPro(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(width: 10),
-                                SizedBox(
-                                  height: 50,
-                                  width: 200,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      primary: Color.fromRGBO(80, 80, 80, 1),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    onPressed: () {},
-                                    child: Text(
-                                      'Tetapkan Harga',
-                                      style: GoogleFonts.sourceSansPro(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
-                      ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  BottomAppBar(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: order.orderItems!.map((e) => e.price).contains(null) ? null : () {
+                                controller.updateStatus(widget.id, 2);
+                              },
+                              child: Text('Simpan'),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: null,
+                              child: Text('Tetapkan Harga'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               );
             });
           }
@@ -261,8 +267,8 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                   controller.order.update((val) {
                     val!.orderItems![itemsIndex].price = newPrice;
                   });
+                  controller.updateOrderPrice(order.orderItems![itemsIndex].id!, newPrice);
                   Get.back();
-                  controller.updateOrderPrice(order.orderItems![itemsIndex].id!, order.orderItems![itemsIndex].price!);
                 },
                 child: Text('Simpan'),
               ),

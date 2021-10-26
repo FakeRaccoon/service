@@ -13,9 +13,16 @@ class SparePartPage extends StatefulWidget {
   _SparePartPageState createState() => _SparePartPageState();
 }
 
-class _SparePartPageState extends State<SparePartPage> {
+class _SparePartPageState extends State<SparePartPage> with TickerProviderStateMixin {
   final controller = Get.put(DataController());
   NumberFormat currency = NumberFormat.decimalPattern();
+  late TabController tabController;
+  var tabList = ['Tetapkan Harga', 'Selesai'];
+  @override
+  void initState() {
+    tabController = TabController(length: 2, vsync: this);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,30 +42,75 @@ class _SparePartPageState extends State<SparePartPage> {
               elevation: 0,
               backgroundColor: Colors.white,
             ),
-      body: FutureBuilder<List<Order>>(
-        future: APIService().getOrder(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            controller.dataList.value = snapshot.data!;
-            if (Responsive.isMobile(context)) {
-              return SparePartList();
-            }
-            return Container(
-              height: Get.height * .70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                ),
-              ),
-              child: SparePartList(),
-            );
-          }
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
+      body: Responsive(
+        mobile: sparepartPageContent(),
+        tablet: Container(
+          height: Get.height * .70,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.grey[300]!,
+            ),
+          ),
+          child: sparepartPageContent(),
+        ),
+        web: Container(
+          height: Get.height * .70,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.grey[300]!,
+            ),
+          ),
+          child: sparepartPageContent(),
+        ),
       ),
+    );
+  }
+
+  Widget sparepartPageContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TabBar(
+          controller: tabController,
+          indicatorColor: kPrimary,
+          labelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.grey,
+          tabs: tabList.map((e) => Tab(child: Text(e))).toList(),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: tabController,
+            children: [
+              FutureBuilder(
+                future: APIService().getOrder(fromStatus: 1, toStatus: 1),
+                builder: (context, AsyncSnapshot<List<Order>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                    controller.dataList.value = snapshot.data!;
+                    return SparePartList();
+                  }
+                  return Center(child: CircularProgressIndicator());
+                },
+              ),
+              FutureBuilder(
+                future: APIService().getOrder(fromStatus: 2, toStatus: 2),
+                builder: (context, AsyncSnapshot<List<Order>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                    controller.dataList.value = snapshot.data!;
+                    return SparePartList();
+                  }
+                  return Center(child: CircularProgressIndicator());
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -126,25 +178,27 @@ class _SparePartListState extends State<SparePartList> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    color: Colors.grey[200],
-                    child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Text(
-                        status,
-                        style: GoogleFonts.sourceSansPro(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                // Align(
+                //   alignment: Alignment.centerLeft,
+                //   child: Container(
+                //     color: Colors.grey[200],
+                //     child: Padding(
+                //       padding: const EdgeInsets.all(5),
+                //       child: Text(
+                //         status,
+                //         style: GoogleFonts.sourceSansPro(
+                //           fontWeight: FontWeight.w600,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
                 ListTile(
                   onTap: () => Get.toNamed('/part/detail', arguments: controller.dataList[index].id),
                   contentPadding: EdgeInsets.zero,
-                  title: Text(controller.dataList[index].item!.itemName, style: content),
+                  title: controller.dataList[index].manualItem == null
+                      ? Text(controller.dataList[index].item!.itemName!, style: content)
+                      : Text(controller.dataList[index].manualItem!, style: content),
                   subtitle: Row(
                     children: [
                       Icon(Icons.date_range_rounded, color: Colors.grey[600]),

@@ -17,8 +17,8 @@ class _RootState extends State<Root> {
     return Scaffold(
       body: FutureBuilder(
         future: APIService().userDetail(),
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          if (snapshot.hasData) return Home();
+        builder: (BuildContext context, AsyncSnapshot<User> snapshot) {
+          if (snapshot.hasData) return Home(user: snapshot.data!);
           if (snapshot.hasError) return ResponsiveLoginPage();
           return Center(child: CircularProgressIndicator());
         },

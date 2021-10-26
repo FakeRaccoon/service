@@ -142,24 +142,63 @@ class _ReceiptInputState extends State<ReceiptInput> {
                     keyboardType: TextInputType.number,
                   ),
                   SizedBox(height: 10),
+                  Obx(
+                    () => Row(
+                      children: [
+                        if (controller.isSwitched.isTrue)
+                          Expanded(
+                            child: TextFormField(
+                              controller: controller.manualItemController,
+                              decoration: InputDecoration(labelText: 'Nama Barang Manual'),
+                            ),
+                          ),
+                        if (controller.isSwitched.isFalse)
+                          Expanded(
+                            child: TextFormField(
+                              onTap: () {
+                                showMaterialModalBottomSheet(
+                                  context: context,
+                                  builder: (context) {
+                                    return itemSearchBottomSheet();
+                                  },
+                                );
+                              },
+                              readOnly: true,
+                              controller: controller.itemController,
+                              decoration: InputDecoration(labelText: 'Nama Barang'),
+                            ),
+                          ),
+                        Column(
+                          children: [
+                            CupertinoSwitch(
+                              value: controller.isSwitched.value,
+                              onChanged: (value) {
+                                controller.isSwitched.value = value;
+                                controller.itemId.value = 0;
+                                controller.itemController.clear();
+                                controller.manualItemController.clear();
+                              },
+                              activeColor: kPrimary,
+                            ),
+                            Text(
+                              'Baru',
+                              style: GoogleFonts.sourceSansPro(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 10),
                   TextFormField(
-                    onTap: () {
-                      showMaterialModalBottomSheet(
-                        context: context,
-                        builder: (context) {
-                          return itemSearchBottomSheet();
-                        },
-                      );
-                    },
-                    readOnly: true,
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Isi nama barang!';
+                        return 'Isi kondisi barang!';
                       }
                       return null;
                     },
-                    controller: controller.itemController,
-                    decoration: InputDecoration(labelText: 'Nama Barang'),
+                    controller: controller.itemConditionController,
+                    decoration: InputDecoration(labelText: 'Kondisi Barang'),
                   ),
                   SizedBox(height: 30),
                   Row(
@@ -186,32 +225,35 @@ class _ReceiptInputState extends State<ReceiptInput> {
                     ],
                   ),
                   SizedBox(height: 30),
-                  SizedBox(
-                    width: Get.width,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        primary: Color.fromRGBO(80, 80, 80, 1),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            primary: Color.fromRGBO(80, 80, 80, 1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: () {
+                            if (_key.currentState!.validate() && checkValue == true) {
+                              controller.createOrder();
+                            } else if (_key.currentState!.validate() && checkValue == false) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Terima Syarat dan Ketentuan'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Lengkapi data'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ));
+                            }
+                          },
+                          child: Text('Simpan'),
+                        ),
                       ),
-                      onPressed: () {
-                        if (_key.currentState!.validate() && checkValue == true) {
-                          controller.createOrder();
-                        } else if (_key.currentState!.validate() && checkValue == false) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Terima Syarat dan Ketentuan'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.red,
-                          ));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Lengkapi data'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.red,
-                          ));
-                        }
-                      },
-                      child: Text('Simpan'),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -340,21 +382,58 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   ),
                 ),
                 SizedBox(height: 10),
+                Obx(
+                  () => Row(
+                    children: [
+                      if (controller.isSwitched.isTrue)
+                        Expanded(
+                          child: TextFormField(
+                            controller: controller.manualItemController,
+                            decoration: InputDecoration(labelText: 'Nama Barang Manual'),
+                          ),
+                        ),
+                      if (controller.isSwitched.isFalse)
+                        Expanded(
+                          child: TextFormField(
+                            onTap: () {
+                              Get.dialog(itemSearchDialog());
+                            },
+                            readOnly: true,
+                            controller: controller.itemConditionController,
+                            decoration: InputDecoration(labelText: 'Nama Barang'),
+                          ),
+                        ),
+                      Column(
+                        children: [
+                          CupertinoSwitch(
+                            value: controller.isSwitched.value,
+                            onChanged: (value) {
+                              controller.isSwitched.value = value;
+                              controller.itemId.value = 0;
+                              controller.itemController.clear();
+                              controller.manualItemController.clear();
+                            },
+                            activeColor: kPrimary,
+                          ),
+                          Text(
+                            'Baru',
+                            style: GoogleFonts.sourceSansPro(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10),
                 TextFormField(
-                  readOnly: true,
-                  onTap: () {
-                    Get.dialog(
-                      itemSearchDialog(),
-                    );
-                  },
                   validator: (value) {
                     if (value!.isEmpty) {
-                      return 'Isi nama barang!';
+                      return 'Isi kondisi barang!';
                     }
                     return null;
                   },
-                  controller: controller.itemController,
-                  decoration: InputDecoration(labelText: 'Nama Barang', hintText: 'Pilih Barang'),
+                  controller: controller.itemConditionController,
+                  decoration: InputDecoration(labelText: 'Kondisi Barang'),
                 ),
                 SizedBox(height: 30),
                 Row(
@@ -434,11 +513,20 @@ class _ReceiptInputState extends State<ReceiptInput> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Cari Barang',
-              style: GoogleFonts.sourceSansPro(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: IconButton(
+                onPressed: () {
+                  Get.back();
+                },
+                icon: Icon(Icons.clear),
+              ),
+              title: Text(
+                'Cari Barang',
+                style: GoogleFonts.sourceSansPro(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
             SizedBox(height: 20),
@@ -503,7 +591,6 @@ class _ReceiptInputState extends State<ReceiptInput> {
       child: Container(
         height: Get.height,
         width: Get.width / 2,
-        color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(

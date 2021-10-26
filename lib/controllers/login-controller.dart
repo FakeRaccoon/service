@@ -34,11 +34,13 @@ class LoginController extends GetxController {
   }
 
   void login() async {
+    Get.dialog(Center(child: CircularProgressIndicator(color: Colors.white)));
     api.login(userController.text, passController.text).then((value) async {
       await box.write('token', value['token']);
       await box.write('refreshToken', value['refreshToken']);
       Get.offAllNamed('/');
     }, onError: (e) {
+      Get.back();
       Get.rawSnackbar(
         messageText: Text(
           'Login gagal, cek username atau password',

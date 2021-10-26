@@ -73,32 +73,6 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
           ),
         ),
       ),
-      bottomNavigationBar: Responsive.isMobile(context)
-          ? BottomAppBar(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        child: Text('Simpan'),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: null,
-                        child: Text('Mulai Service'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : null,
       body: FutureBuilder<OrderDetail>(
         future: APIService().getOrderDetail(widget.id),
         builder: (BuildContext context, snapshot) {
@@ -107,270 +81,333 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
             controller.orderItem.value = snapshot.data!.orderItems!;
             return Obx(() {
               final order = controller.order.value;
-              return SingleChildScrollView(
-                padding: Responsive.isMobile(context)
-                    ? EdgeInsets.symmetric(horizontal: defaultPadding / 2)
-                    : EdgeInsets.zero,
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(order.item!.itemName!, style: AppStyle.headerStyle),
-                        SizedBox(height: 20),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text('Masalah barang', style: AppStyle.headerStyle),
-                          trailing: order.problem != null
-                              ? null
-                              : IconButton(
-                                  icon: Icon(Icons.add, size: 20),
-                                  onPressed: () {
-                                    if (kIsWeb)
-                                      Get.dialog(inputProblemDialog(order));
-                                    else
-                                      showMaterialModalBottomSheet(
-                                        context: context,
-                                        builder: (context) {
-                                          return problemBottomSheet(order);
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: Responsive.isMobile(context)
+                          ? EdgeInsets.symmetric(horizontal: defaultPadding / 2)
+                          : EdgeInsets.zero,
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(roundedCorner)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(defaultPadding),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (order.manualItem == null) Text(order.item!.itemName!, style: AppStyle.headerStyle),
+                              if (order.manualItem != null) Text(order.manualItem!, style: AppStyle.headerStyle),
+                              SizedBox(height: 20),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text('Masalah barang', style: AppStyle.headerStyle),
+                                trailing: order.problem != null
+                                    ? null
+                                    : IconButton(
+                                        icon: Icon(Icons.add, size: 20),
+                                        onPressed: () {
+                                          if (kIsWeb)
+                                            Get.dialog(inputProblemDialog(order));
+                                          else
+                                            showMaterialModalBottomSheet(
+                                              context: context,
+                                              builder: (context) {
+                                                return problemBottomSheet(order);
+                                              },
+                                            );
                                         },
-                                      );
+                                      ),
+                              ),
+                              if (order.problem != null)
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(order.problem!, style: AppStyle.bodyStyle),
+                                  trailing: order.status == 0
+                                      ? IconButton(
+                                          color: Colors.black,
+                                          disabledColor: Colors.grey,
+                                          icon: Icon(Icons.edit, size: 20),
+                                          onPressed: () {
+                                            if (kIsWeb)
+                                              Get.dialog(inputProblemDialog(order));
+                                            else
+                                              showMaterialModalBottomSheet(
+                                                isDismissible: false,
+                                                context: context,
+                                                builder: (context) {
+                                                  return problemBottomSheet(order);
+                                                },
+                                              );
+                                          },
+                                        )
+                                      : null,
+                                ),
+                              Divider(thickness: 1),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  'Estimasi Selesai',
+                                  style: AppStyle.headerStyle,
+                                ),
+                                trailing: order.status == 0
+                                    ? IconButton(
+                                        onPressed: () async {
+                                          final date = await showDatePicker(
+                                            locale: const Locale('id', 'ID'),
+                                            context: context,
+                                            initialDate: DateTime.now(),
+                                            firstDate: DateTime.now(),
+                                            lastDate: DateTime(2025),
+                                          );
+                                          controller.order.update((val) {
+                                            val!.estimatedDate = date;
+                                          });
+                                          final newDate = DateTime.now();
+                                          print(date!.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
+                                          APIService().updateOrder(order.id!,
+                                              estimatedDate:
+                                                  date.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
+                                          // DatePicker.showDatePicker(context,
+                                          //     locale: LocaleType.id,
+                                          //     minTime: DateTime.now(),
+                                          //     maxTime: DateTime(2023), onConfirm: (DateTime time) {
+                                          //   print(time);
+                                          //   APIService()
+                                          //       .updateOrder(
+                                          //     data.id,
+                                          //     order.data![0].problem,
+                                          //     time.toString(),
+                                          //   )
+                                          //       .then((value) {
+                                          //     refresh();
+                                          //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                          //       content: Text('Berhasil Update Data'),
+                                          //       behavior: SnackBarBehavior.floating,
+                                          //     ));
+                                          //   }, onError: (e) {
+                                          //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                          //       backgroundColor: Colors.red,
+                                          //       content: Text(e),
+                                          //       behavior: SnackBarBehavior.floating,
+                                          //     ));
+                                          //   });
+                                          // });
+                                        },
+                                        icon: Icon(Icons.calendar_today_rounded),
+                                      )
+                                    : SizedBox(),
+                              ),
+                              if (order.estimatedDate != null)
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    DateFormat('d MMMM y', 'id').format(controller.order.value.estimatedDate!),
+                                    style: AppStyle.bodyStyle,
+                                  ),
+                                ),
+                              Divider(thickness: 1),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text('Biaya Perbaikan', style: AppStyle.headerStyle),
+                              ),
+                              if (order.payment?.repairFee != null)
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text('Rp${NumberFormat.decimalPattern().format(order.payment!.repairFee)}',
+                                      style: AppStyle.bodyStyle),
+                                  trailing: order.status == 0
+                                      ? IconButton(
+                                          color: Colors.black,
+                                          disabledColor: Colors.grey,
+                                          icon: Icon(Icons.edit, size: 20),
+                                          onPressed: () {
+                                            if (kIsWeb)
+                                              Get.dialog(repairFeeDialog(order));
+                                            else
+                                              showMaterialModalBottomSheet(
+                                                isDismissible: false,
+                                                context: context,
+                                                builder: (context) {
+                                                  return repairFeeBottomSheet(order);
+                                                },
+                                              );
+                                          },
+                                        )
+                                      : SizedBox(),
+                                ),
+                              Divider(thickness: 1),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text('Part yg dibutuhkan', style: AppStyle.headerStyle),
+                                trailing: order.status == 0
+                                    ? IconButton(
+                                        color: Colors.black,
+                                        icon: Icon(Icons.add, size: 20),
+                                        onPressed: () {
+                                          if (!Responsive.isMobile(context))
+                                            Get.dialog(itemSearchDialog());
+                                          else
+                                            showMaterialModalBottomSheet(
+                                              // shape: RoundedRectangleBorder(
+                                              //   borderRadius: BorderRadius.vertical(
+                                              //     top: Radius.circular(20),
+                                              //   ),
+                                              // ),
+                                              context: context,
+                                              builder: (context) => itemSearchBottomSheet(),
+                                            );
+                                        },
+                                      )
+                                    : SizedBox(),
+                              ),
+                              if (order.orderItems!.isNotEmpty)
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: order.orderItems!.length,
+                                  itemBuilder: (context, index) {
+                                    return ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(order.orderItems![index].item!.itemName!),
+                                      leading: order.status == 0
+                                          ? IconButton(
+                                              onPressed: () =>
+                                                  controller.deleteOrderItem(order.id!, order.orderItems![index].id!),
+                                              icon: Icon(Icons.delete),
+                                            )
+                                          : null,
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (order.status == 0)
+                                            IconButton(
+                                              onPressed: () {
+                                                if (order.orderItems![index].qty! != 1) {
+                                                  controller.orderId.value = order.orderItems![index].id!;
+                                                  controller.qty.value++;
+                                                  controller.order.update((val) {
+                                                    val!.orderItems![index].qty = (val.orderItems![index].qty! - 1);
+                                                  });
+                                                }
+                                              },
+                                              icon: Icon(Icons.remove),
+                                            ),
+                                          Text('${order.orderItems![index].qty!}'),
+                                          if (order.status == 0)
+                                            IconButton(
+                                              onPressed: () {
+                                                controller.orderId.value = order.orderItems![index].id!;
+                                                controller.qty.value++;
+                                                controller.order.update((val) {
+                                                  val!.orderItems![index].qty = (val.orderItems![index].qty! + 1);
+                                                });
+                                              },
+                                              icon: Icon(Icons.add),
+                                            ),
+                                        ],
+                                      ),
+                                    );
                                   },
                                 ),
-                        ),
-                        if (order.problem != null)
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(order.problem!, style: AppStyle.bodyStyle),
-                            trailing: IconButton(
-                              color: Colors.black,
-                              disabledColor: Colors.grey,
-                              icon: Icon(Icons.edit, size: 20),
-                              onPressed: () {
-                                if (kIsWeb)
-                                  Get.dialog(inputProblemDialog(order));
-                                else
-                                  showMaterialModalBottomSheet(
-                                    isDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return problemBottomSheet(order);
-                                    },
-                                  );
-                              },
-                            ),
-                          ),
-                        Divider(thickness: 1),
-                        Row(
-                          children: [
-                            Text('Estimasi selesai', style: AppStyle.headerStyle),
-                            Spacer(),
-                            IconButton(
-                              color: Colors.black,
-                              icon: Icon(Icons.date_range_rounded, size: 20),
-                              onPressed: () async {
-                                final date = await showDatePicker(
-                                  locale: const Locale('id', 'ID'),
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime.now(),
-                                  lastDate: DateTime(2025),
-                                );
-                                controller.order.update((val) {
-                                  val!.estimatedDate = date;
-                                });
-                                final newDate = DateTime.now();
-                                print(date!.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
-                                APIService().updateOrder(order.id!,
-                                    estimatedDate: date.add(Duration(hours: newDate.hour, minutes: newDate.minute)));
-                                // DatePicker.showDatePicker(context,
-                                //     locale: LocaleType.id,
-                                //     minTime: DateTime.now(),
-                                //     maxTime: DateTime(2023), onConfirm: (DateTime time) {
-                                //   print(time);
-                                //   APIService()
-                                //       .updateOrder(
-                                //     data.id,
-                                //     order.data![0].problem,
-                                //     time.toString(),
-                                //   )
-                                //       .then((value) {
-                                //     refresh();
-                                //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                //       content: Text('Berhasil Update Data'),
-                                //       behavior: SnackBarBehavior.floating,
-                                //     ));
-                                //   }, onError: (e) {
-                                //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                //       backgroundColor: Colors.red,
-                                //       content: Text(e),
-                                //       behavior: SnackBarBehavior.floating,
-                                //     ));
-                                //   });
-                                // });
-                              },
-                            ),
-                          ],
-                        ),
-                        if (order.estimatedDate != null)
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              DateFormat('d MMMM y', 'id').format(controller.order.value.estimatedDate!),
-                              style: AppStyle.bodyStyle,
-                            ),
-                          ),
-                        Divider(thickness: 1),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text('Biaya Perbaikan', style: AppStyle.headerStyle),
-                        ),
-                        if (order.payment?.repairFee != null)
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text('Rp${NumberFormat.decimalPattern().format(order.payment!.repairFee)}',
-                                style: AppStyle.bodyStyle),
-                            trailing: IconButton(
-                              color: Colors.black,
-                              disabledColor: Colors.grey,
-                              icon: Icon(Icons.edit, size: 20),
-                              onPressed: () {
-                                if (kIsWeb)
-                                  Get.dialog(repairFeeDialog(order));
-                                else
-                                  showMaterialModalBottomSheet(
-                                    isDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return repairFeeBottomSheet(order);
-                                    },
-                                  );
-                              },
-                            ),
-                          ),
-                        Divider(thickness: 1),
-                        Row(
-                          children: [
-                            Text('Part yang dibutuhkan', style: AppStyle.headerStyle),
-                            Spacer(),
-                            IconButton(
-                              color: Colors.black,
-                              icon: Icon(Icons.add, size: 20),
-                              onPressed: () {
-                                if (!Responsive.isMobile(context))
-                                  Get.dialog(itemSearchDialog());
-                                else
-                                  showMaterialModalBottomSheet(
-                                    // shape: RoundedRectangleBorder(
-                                    //   borderRadius: BorderRadius.vertical(
-                                    //     top: Radius.circular(20),
-                                    //   ),
-                                    // ),
-                                    context: context,
-                                    builder: (context) => itemSearchBottomSheet(),
-                                  );
-                              },
-                            ),
-                          ],
-                        ),
-                        if (order.orderItems!.isNotEmpty)
-                          ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: order.orderItems!.length,
-                            itemBuilder: (context, index) {
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(order.orderItems![index].item!.itemName!),
-                                leading: IconButton(
-                                  onPressed: () => controller.deleteOrderItem(order.id!, order.orderItems![index].id!),
-                                  icon: Icon(Icons.delete),
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        if (order.orderItems![index].qty! != 1) {
-                                          controller.orderId.value = order.orderItems![index].id!;
-                                          controller.qty.value++;
-                                          controller.order.update((val) {
-                                            val!.orderItems![index].qty = (val.orderItems![index].qty! - 1);
-                                          });
-                                        }
-                                      },
-                                      icon: Icon(Icons.remove),
-                                    ),
-                                    Text('${order.orderItems![index].qty!}'),
-                                    IconButton(
-                                      onPressed: () {
-                                        controller.orderId.value = order.orderItems![index].id!;
-                                        controller.qty.value++;
-                                        controller.order.update((val) {
-                                          val!.orderItems![index].qty = (val.orderItems![index].qty! + 1);
-                                        });
-                                      },
-                                      icon: Icon(Icons.add),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        if (!Responsive.isMobile(context)) SizedBox(height: 30),
-                        if (!Responsive.isMobile(context))
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  height: 50,
-                                  width: 200,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      primary: Color.fromRGBO(80, 80, 80, 1),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    onPressed: () {
-                                      Get.back();
-                                    },
-                                    child: Text(
-                                      'Simpan',
-                                      style: GoogleFonts.sourceSansPro(
-                                        fontWeight: FontWeight.bold,
+                              if (!Responsive.isMobile(context)) SizedBox(height: 30),
+                              if (!Responsive.isMobile(context))
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (order.status == 0)
+                                        SizedBox(
+                                          height: 50,
+                                          width: 200,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              primary: Color.fromRGBO(80, 80, 80, 1),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
+                                            onPressed: () {
+                                              Get.back();
+                                            },
+                                            child: Text(
+                                              'Simpan',
+                                              style: GoogleFonts.sourceSansPro(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      if (order.status == 0) SizedBox(width: 10),
+                                      SizedBox(
+                                        height: 50,
+                                        width: 200,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            primary: Color.fromRGBO(80, 80, 80, 1),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                          onPressed: () {},
+                                          child: Text(
+                                            'Proses Service',
+                                            style: GoogleFonts.sourceSansPro(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(width: 10),
-                                SizedBox(
-                                  height: 50,
-                                  width: 200,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      primary: Color.fromRGBO(80, 80, 80, 1),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    onPressed: () {},
-                                    child: Text(
-                                      'Proses Service',
-                                      style: GoogleFonts.sourceSansPro(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
-                      ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  if (Responsive.isMobile(context))
+                    BottomAppBar(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                        child: Row(
+                          children: [
+                            if (order.status! == 0)
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: order.problem != null &&
+                                          order.estimatedDate != null &&
+                                          order.payment!.repairFee != 0 &&
+                                          order.orderItems!.length != 0
+                                      ? () {
+                                          controller.updateStatus(widget.id, 1);
+                                        }
+                                      : null,
+                                  child: Text('Simpan'),
+                                ),
+                              ),
+                            if (order.status == 0) SizedBox(width: 10),
+                            if (order.status! == 3)
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    controller.updateStatus(widget.id, 4);
+                                  },
+                                  child: Text('Mulai Service'),
+                                ),
+                              ),
+                            if (order.status! == 4)
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    controller.updateStatus(widget.id, 5);
+                                  },
+                                  child: Text('Selesai Service'),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    )
+                ],
               );
             });
           }
