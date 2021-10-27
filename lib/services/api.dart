@@ -8,6 +8,7 @@ import 'package:get/get.dart' as route;
 import 'package:get/get_connect/http/src/request/request.dart';
 import 'package:get/get_utils/get_utils.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:service/models/customer-model.dart';
 import 'package:service/models/item-model.dart';
 import 'package:service/models/order-detail-model.dart';
 import 'package:service/models/order-model.dart';
@@ -170,6 +171,32 @@ class APIService {
       }
       print(response.data);
       return userFromJson(jsonEncode(response.data['result']));
+    } on DioError catch (e) {
+      throw e.message;
+    }
+  }
+
+  Future<List<CustomerModel>> getCustomer({String? search}) async {
+    try {
+      dio.interceptors.clear();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+            return handler.next(options);
+          },
+          onError: (DioError err, handler) async {
+            if (err.response?.statusCode == 401) {
+              await refreshToken();
+              return _retry(err.requestOptions);
+            }
+            return handler.next(err);
+          },
+        ),
+      );
+      dio.options.headers['Authorization'] = 'Bearer ${box.read('token')}';
+      final response = await dio.get(baseUrl + '/customers', queryParameters: {'search': search?.trim()});
+      return customerModelFromJson(jsonEncode(response.data['result']));
     } on DioError catch (e) {
       throw e.message;
     }

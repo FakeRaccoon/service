@@ -340,6 +340,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(vertical: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -490,7 +491,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                                   trailing: Text('Rp${currency.format(total)}',
                                       style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
                                 ),
-                                if (order.status != 5)
+                                if (order.status! <= 5)
                                   ListTile(
                                     contentPadding: EdgeInsets.zero,
                                     title: Text('Dp (75% dari Total)',
@@ -515,6 +516,7 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                                         style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
                                   ),
                                 SizedBox(height: 20),
+                                if(order.status != 6)
                                 Row(
                                   children: [
                                     SizedBox(
@@ -587,10 +589,10 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                               child: ElevatedButton(
                                 onPressed: checkValue == true && order.status == 5
                                     ? () {
-                                        controller.updateStatus(id, 3, dp: total * 75 / 100);
+                                        controller.updateStatus(id, 6);
                                       }
                                     : null,
-                                child: Text('Simpan'),
+                                child: Text('Selesai'),
                               ),
                             ),
                           SizedBox(width: 10),

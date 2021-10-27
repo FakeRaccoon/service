@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:service/componen/term-and-condition.dart';
 import 'package:service/controllers/receipt-input-controller.dart';
+import 'package:service/models/customer-model.dart';
 import 'package:service/models/item-model.dart';
 import 'package:service/models/order-model.dart';
 import 'package:service/responsive.dart';
@@ -107,52 +108,101 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   Divider(thickness: 1),
                   SizedBox(height: 10),
                   Text('Detail', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 20)),
-                  TextFormField(
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Isi nama customer!';
-                      }
-                      return null;
-                    },
-                    controller: controller.customerController,
-                    decoration: InputDecoration(labelText: 'Nama Customer'),
+                  Obx(
+                    () => Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            onTap: () {
+                              showMaterialModalBottomSheet(
+                                context: context,
+                                builder: (context) {
+                                  return customerSearchBottomSheet();
+                                },
+                              );
+                            },
+                            readOnly: true,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Isi nama customer!';
+                              }
+                              return null;
+                            },
+                            controller: controller.customerController,
+                            decoration: InputDecoration(labelText: 'Nama Customer'),
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            CupertinoSwitch(
+                              value: controller.isNewCustomer.value,
+                              onChanged: (value) {
+                                controller.isNewCustomer.value = value;
+                                controller.itemId.value = 0;
+                                controller.customerController.clear();
+                                controller.phoneNumberController.clear();
+                                controller.addressController.clear();
+                              },
+                              activeColor: kPrimary,
+                            ),
+                            Text(
+                              'Baru',
+                              style: GoogleFonts.sourceSansPro(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   // SizedBox(height: 20),
-                  TextFormField(
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Isi nomor telfon customer!';
+                  Obx(
+                    () {
+                      if (controller.isNewCustomer.value == true) {
+                        return TextFormField(
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Isi nomor telfon customer!';
+                            }
+                            return null;
+                          },
+                          controller: controller.phoneNumberController,
+                          decoration: InputDecoration(labelText: 'Nomor Telfon'),
+                          keyboardType: TextInputType.number,
+                        );
                       }
-                      return null;
+                      return SizedBox();
                     },
-                    controller: controller.phoneNumberController,
-                    decoration: InputDecoration(labelText: 'Nomor Telfon'),
-                    keyboardType: TextInputType.number,
                   ),
+
                   // SizedBox(height: 20),
-                  TextFormField(
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Isi alamat customer!';
-                      }
-                      return null;
-                    },
-                    controller: controller.addressController,
-                    decoration: InputDecoration(labelText: 'Alamat'),
-                    keyboardType: TextInputType.number,
-                  ),
+                  Obx(() {
+                    if (controller.isNewCustomer.value == true) {
+                      return TextFormField(
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Isi alamat customer!';
+                          }
+                          return null;
+                        },
+                        controller: controller.addressController,
+                        decoration: InputDecoration(labelText: 'Alamat'),
+                        keyboardType: TextInputType.number,
+                      );
+                    }
+                    return SizedBox();
+                  }),
                   SizedBox(height: 10),
                   Obx(
                     () => Row(
                       children: [
-                        if (controller.isSwitched.isTrue)
+                        if (controller.isNewItem.isTrue)
                           Expanded(
                             child: TextFormField(
                               controller: controller.manualItemController,
                               decoration: InputDecoration(labelText: 'Nama Barang Manual'),
                             ),
                           ),
-                        if (controller.isSwitched.isFalse)
+                        if (controller.isNewItem.isFalse)
                           Expanded(
                             child: TextFormField(
                               onTap: () {
@@ -171,9 +221,9 @@ class _ReceiptInputState extends State<ReceiptInput> {
                         Column(
                           children: [
                             CupertinoSwitch(
-                              value: controller.isSwitched.value,
+                              value: controller.isNewItem.value,
                               onChanged: (value) {
-                                controller.isSwitched.value = value;
+                                controller.isNewItem.value = value;
                                 controller.itemId.value = 0;
                                 controller.itemController.clear();
                                 controller.manualItemController.clear();
@@ -385,14 +435,14 @@ class _ReceiptInputState extends State<ReceiptInput> {
                 Obx(
                   () => Row(
                     children: [
-                      if (controller.isSwitched.isTrue)
+                      if (controller.isNewItem.isTrue)
                         Expanded(
                           child: TextFormField(
                             controller: controller.manualItemController,
                             decoration: InputDecoration(labelText: 'Nama Barang Manual'),
                           ),
                         ),
-                      if (controller.isSwitched.isFalse)
+                      if (controller.isNewItem.isFalse)
                         Expanded(
                           child: TextFormField(
                             onTap: () {
@@ -406,9 +456,9 @@ class _ReceiptInputState extends State<ReceiptInput> {
                       Column(
                         children: [
                           CupertinoSwitch(
-                            value: controller.isSwitched.value,
+                            value: controller.isNewItem.value,
                             onChanged: (value) {
-                              controller.isSwitched.value = value;
+                              controller.isNewItem.value = value;
                               controller.itemId.value = 0;
                               controller.itemController.clear();
                               controller.manualItemController.clear();
@@ -542,9 +592,9 @@ class _ReceiptInputState extends State<ReceiptInput> {
             ),
             SizedBox(height: 20),
             Expanded(
-              child: FutureBuilder<List<ItemModel>>(
+              child: FutureBuilder(
                 future: controller.itemFuture,
-                builder: (context, snapshot) {
+                builder: (context, AsyncSnapshot<List<ItemModel>> snapshot) {
                   if (snapshot.hasData) {
                     controller.itemList.value = snapshot.data!;
                     if (snapshot.data!.isEmpty) return Text('Terjadi Kesalahan');
@@ -565,6 +615,82 @@ class _ReceiptInputState extends State<ReceiptInput> {
                               contentPadding: EdgeInsets.zero,
                               title: Text(item.itemName!),
                               subtitle: Text(item.itemAlias!),
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) {
+                            return Divider();
+                          },
+                        );
+                      },
+                    );
+                  }
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget customerSearchBottomSheet() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: IconButton(
+                onPressed: () {
+                  Get.back();
+                },
+                icon: Icon(Icons.clear),
+              ),
+              title: Text(
+                'Cari Customer',
+                style: GoogleFonts.sourceSansPro(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            TextFormField(
+              onChanged: (String value) {
+                controller.customerSearch.value = value;
+              },
+              decoration: InputDecoration(
+                hintText: 'Cari customer',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: FutureBuilder(
+                future: controller.customerFuture,
+                builder: (context, AsyncSnapshot<List<CustomerModel>> snapshot) {
+                  if (snapshot.hasError) return Text('Terjadi Kesalahan');
+                  if (snapshot.hasData) {
+                    controller.customerList.value = snapshot.data!;
+                    return Obx(
+                      () {
+                        if (controller.customerList.isEmpty) return Center(child: Text('Barang tidak ditemukan'));
+                        return ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: controller.customerList.length,
+                          itemBuilder: (context, index) {
+                            final customer = controller.customerList[index];
+                            return ListTile(
+                              onTap: null,
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(customer.name!),
+                              subtitle: Text('${customer.contact!}'),
                             );
                           },
                           separatorBuilder: (BuildContext context, int index) {

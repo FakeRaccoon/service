@@ -17,10 +17,25 @@ class FinalTransaction extends StatefulWidget {
   _FinalTransactionState createState() => _FinalTransactionState();
 }
 
-class _FinalTransactionState extends State<FinalTransaction> {
+class _FinalTransactionState extends State<FinalTransaction> with TickerProviderStateMixin {
+  late TabController tabController;
+  var tabList = ['Serah Terima', 'Selesai'];
+  @override
+  void initState() {
+    tabController = TabController(length: 2, vsync: this);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: !Responsive.isMobile(context)
           ? null
           : AppBar(
@@ -36,15 +51,45 @@ class _FinalTransactionState extends State<FinalTransaction> {
                 ),
               ),
             ),
-      body: FutureBuilder(
-        future: APIService().getOrder(fromStatus: 5, toStatus: 5),
-        builder: (context, AsyncSnapshot<List<Order>> snapshot) {
-          if (snapshot.hasData) {
-            if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
-            return OrderList(status: 0, orders: snapshot.data!);
-          }
-          return Center(child: CircularProgressIndicator());
-        },
+      body: Column(
+        children: [
+          TabBar(
+            controller: tabController,
+            indicatorColor: kPrimary,
+            labelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+            unselectedLabelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
+            labelColor: Colors.black,
+            unselectedLabelColor: Colors.grey,
+            tabs: tabList.map((e) => Tab(child: Text(e))).toList(),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: tabController,
+              children: [
+                FutureBuilder(
+                  future: APIService().getOrder(fromStatus: 5, toStatus: 5),
+                  builder: (context, AsyncSnapshot<List<Order>> snapshot) {
+                    if (snapshot.hasData) {
+                      if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                      return OrderList(status: 0, orders: snapshot.data!);
+                    }
+                    return Center(child: CircularProgressIndicator());
+                  },
+                ),
+                FutureBuilder(
+                  future: APIService().getOrder(fromStatus: 6, toStatus: 6),
+                  builder: (context, AsyncSnapshot<List<Order>> snapshot) {
+                    if (snapshot.hasData) {
+                      if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+                      return OrderList(status: 0, orders: snapshot.data!);
+                    }
+                    return Center(child: CircularProgressIndicator());
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

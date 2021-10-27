@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:service/componen/loading-page.dart';
 import 'package:service/componen/success-page.dart';
+import 'package:service/models/customer-model.dart';
 import 'package:service/models/item-model.dart';
 import 'package:service/screens/error-page.dart';
 import 'package:service/screens/receipt_input.dart';
@@ -19,13 +20,16 @@ class ReceiptInputController extends GetxController {
   late TextEditingController problemController;
   var dateTime = DateTime.now().obs;
   var itemSearch = ''.obs;
+  var customerSearch = ''.obs;
 
   late Future<List<ItemModel>> itemFuture;
+  late Future<List<CustomerModel>> customerFuture;
 
   var itemList = [ItemModel()].obs;
+  var customerList = [CustomerModel()].obs;
   var itemId = 0.obs;
 
-  var isSwitched = false.obs;
+  var isNewItem = false.obs;
 
   var isNewCustomer = true.obs;
 
@@ -34,9 +38,14 @@ class ReceiptInputController extends GetxController {
     itemList.assignAll(response);
   }
 
+  void getCustomer(String customer) async {
+    final response = await APIService().getCustomer(search: customer);
+    customerList.assignAll(response);
+  }
+
   Future<void> createOrder() async {
     try {
-      Get.off(() => LoadingPage(message: 'Transaksi dalam proses.'));
+      Get.to(() => LoadingPage(message: 'Transaksi dalam proses.'));
       await APIService().createOrder(
         customerController.text,
         addressController.text,
@@ -59,7 +68,9 @@ class ReceiptInputController extends GetxController {
   void onInit() {
     super.onInit();
     debounce(itemSearch, (value) => getItem(value.toString()));
+    debounce(customerSearch, (value) => getCustomer(value.toString()));
     itemFuture = APIService().getItem();
+    customerFuture = APIService().getCustomer();
     customerController = TextEditingController();
     manualItemController = TextEditingController();
     phoneNumberController = TextEditingController();

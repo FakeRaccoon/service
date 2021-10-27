@@ -121,7 +121,7 @@ class DataDetailController extends GetxController {
   void onInit() {
     super.onInit();
     debounce(itemSearch, (value) => getItem(value.toString()));
-    debounce(qty, (_) => updateOrderItemQty());
+    debounce(order, (_) => updateOrderItemQty());
     itemFuture = APIService().getItem();
     problemController = TextEditingController();
     itemController = TextEditingController();

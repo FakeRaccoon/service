@@ -190,18 +190,20 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                       child: Row(
                         children: [
+                          // Expanded(
+                          //   child: ElevatedButton(
+                          //     onPressed: order.orderItems!.map((e) => e.price).contains(null) ? null : () {
+                          //       controller.updateStatus(widget.id, 2);
+                          //     },
+                          //     child: Text('Simpan'),
+                          //   ),
+                          // ),
+                          // SizedBox(width: 10),
                           Expanded(
                             child: ElevatedButton(
                               onPressed: order.orderItems!.map((e) => e.price).contains(null) ? null : () {
                                 controller.updateStatus(widget.id, 2);
                               },
-                              child: Text('Simpan'),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: null,
                               child: Text('Tetapkan Harga'),
                             ),
                           ),

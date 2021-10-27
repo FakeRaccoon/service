@@ -264,6 +264,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                               ),
                               if (order.orderItems!.isNotEmpty)
                                 ListView.builder(
+                                  physics: NeverScrollableScrollPhysics(),
                                   shrinkWrap: true,
                                   itemCount: order.orderItems!.length,
                                   itemBuilder: (context, index) {
@@ -285,7 +286,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                                               onPressed: () {
                                                 if (order.orderItems![index].qty! != 1) {
                                                   controller.orderId.value = order.orderItems![index].id!;
-                                                  controller.qty.value++;
+                                                  // controller.qty.value++;
                                                   controller.order.update((val) {
                                                     val!.orderItems![index].qty = (val.orderItems![index].qty! - 1);
                                                   });
@@ -298,7 +299,7 @@ class _TechnicianDetailPageState extends State<TechnicianDetailPage> {
                                             IconButton(
                                               onPressed: () {
                                                 controller.orderId.value = order.orderItems![index].id!;
-                                                controller.qty.value++;
+                                                // controller.qty.value++;
                                                 controller.order.update((val) {
                                                   val!.orderItems![index].qty = (val.orderItems![index].qty! + 1);
                                                 });
