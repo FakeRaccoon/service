@@ -15,10 +15,16 @@ class ErrorPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 10),
             Text('Gagal memproses', style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold, fontSize: 18)),
             Text(message, style: GoogleFonts.sourceSansPro()),
+            SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              onPressed: () => Get.offAllNamed('/'),
+              child: Text('Kembali'),
+            ),
           ],
         ),
       ),

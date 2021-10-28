@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:service/componen/loading-page.dart';
 import 'package:service/componen/success-page.dart';
@@ -15,7 +17,7 @@ class ReceiptInputController extends GetxController {
   late TextEditingController phoneNumberController;
   late TextEditingController addressController;
   late TextEditingController itemController;
-  late TextEditingController manualItemController;
+  late TextEditingController newItemNameController;
   late TextEditingController itemConditionController;
   late TextEditingController problemController;
   var dateTime = DateTime.now().obs;
@@ -27,6 +29,7 @@ class ReceiptInputController extends GetxController {
 
   var itemList = [ItemModel()].obs;
   var customerList = [CustomerModel()].obs;
+  var customerId = 0.obs;
   var itemId = 0.obs;
 
   var isNewItem = false.obs;
@@ -47,19 +50,16 @@ class ReceiptInputController extends GetxController {
     try {
       Get.to(() => LoadingPage(message: 'Transaksi dalam proses.'));
       await APIService().createOrder(
-        customerController.text,
-        addressController.text,
-        int.parse(phoneNumberController.text),
-        itemConditionController.text,
+        customerId: customerId.value == 0 ? null : customerId.value,
+        name: customerController.text,
+        contact: int.parse(phoneNumberController.text),
+        address: addressController.text,
+        condition: itemConditionController.text,
         itemId: itemId.value == 0 ? null : itemId.value,
-        manualItem: manualItemController.text.isEmpty ? null : manualItemController.text,
+        itemName: newItemNameController.text.isEmpty ? null : newItemNameController.text,
       );
-      customerController.clear();
-      phoneNumberController.clear();
-      addressController.clear();
-      itemController.clear();
       Get.off(() => SuccessPage(message: 'Berhasil buat transaksi baru.'));
-    } on Exception catch (e) {
+    } on Exception {
       Get.off(() => ErrorPage(message: 'Gagal memproses transaksi, coba beberapa saat lagi'));
     }
   }
@@ -72,7 +72,7 @@ class ReceiptInputController extends GetxController {
     itemFuture = APIService().getItem();
     customerFuture = APIService().getCustomer();
     customerController = TextEditingController();
-    manualItemController = TextEditingController();
+    newItemNameController = TextEditingController();
     phoneNumberController = TextEditingController();
     addressController = TextEditingController();
     itemController = TextEditingController();
@@ -87,7 +87,7 @@ class ReceiptInputController extends GetxController {
   void onClose() {
     super.onClose();
     customerController.dispose();
-    manualItemController.dispose();
+    newItemNameController.dispose();
     itemConditionController.dispose();
     phoneNumberController.dispose();
     addressController.dispose();

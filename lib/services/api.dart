@@ -402,26 +402,29 @@ class APIService {
     }
   }
 
-  Future createOrder(
-    String name,
-    String address,
-    int contact,
-    String condition, {
+  Future createOrder({
+    int? customerId,
+    String? condition,
+    String? name,
+    String? address,
+    int? contact,
     int? itemId,
-    String? manualItem,
+    String? itemName,
   }) async {
     try {
       final response = await dio.post(baseUrl + '/orders', data: {
         "name": name,
         "status": 0,
+        "customer_id": customerId,
         "address": address,
         "contact": contact,
         "item_id": itemId,
-        "manual_item": manualItem,
+        "item_name": itemName,
         "condition": condition,
       });
       return response.data;
     } on DioError catch (e) {
+      print(e.response!.data);
       throw e.message;
     }
   }

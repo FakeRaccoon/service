@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:service/responsive.dart';
 import 'package:service/screens/login.dart';
 
@@ -8,8 +9,9 @@ class ResponsiveLoginPage extends StatelessWidget {
     return Responsive(
       mobile: Scaffold(
         appBar: AppBar(
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
           elevation: 0,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
         ),
         body: Login(),
       ),

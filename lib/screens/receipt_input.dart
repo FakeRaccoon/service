@@ -111,34 +111,48 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   Obx(
                     () => Row(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            onTap: () {
-                              showMaterialModalBottomSheet(
-                                context: context,
-                                builder: (context) {
-                                  return customerSearchBottomSheet();
-                                },
-                              );
-                            },
-                            readOnly: true,
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Isi nama customer!';
-                              }
-                              return null;
-                            },
-                            controller: controller.customerController,
-                            decoration: InputDecoration(labelText: 'Nama Customer'),
+                        if (controller.isNewCustomer.isTrue)
+                          Expanded(
+                            child: TextFormField(
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Isi nama customer!';
+                                }
+                                return null;
+                              },
+                              controller: controller.customerController,
+                              decoration: InputDecoration(labelText: 'Nama Customer'),
+                            ),
                           ),
-                        ),
+                        if (controller.isNewCustomer.isFalse)
+                          Expanded(
+                            child: TextFormField(
+                              onTap: () {
+                                showMaterialModalBottomSheet(
+                                  context: context,
+                                  builder: (context) {
+                                    return customerSearchBottomSheet();
+                                  },
+                                );
+                              },
+                              readOnly: true,
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Isi nama customer!';
+                                }
+                                return null;
+                              },
+                              controller: controller.customerController,
+                              decoration: InputDecoration(labelText: 'Pilih Customer'),
+                            ),
+                          ),
                         Column(
                           children: [
                             CupertinoSwitch(
                               value: controller.isNewCustomer.value,
                               onChanged: (value) {
                                 controller.isNewCustomer.value = value;
-                                controller.itemId.value = 0;
+                                controller.customerId.value = 0;
                                 controller.customerController.clear();
                                 controller.phoneNumberController.clear();
                                 controller.addressController.clear();
@@ -157,7 +171,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                   // SizedBox(height: 20),
                   Obx(
                     () {
-                      if (controller.isNewCustomer.value == true) {
+                      if (controller.isNewCustomer.isTrue) {
                         return TextFormField(
                           validator: (value) {
                             if (value!.isEmpty) {
@@ -170,13 +184,25 @@ class _ReceiptInputState extends State<ReceiptInput> {
                           keyboardType: TextInputType.number,
                         );
                       }
-                      return SizedBox();
+                      return TextFormField(
+                        onTap: null,
+                        readOnly: true,
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Isi nomor telfon customer!';
+                          }
+                          return null;
+                        },
+                        controller: controller.phoneNumberController,
+                        decoration: InputDecoration(labelText: 'Nomor Telfon'),
+                        keyboardType: TextInputType.number,
+                      );
                     },
                   ),
 
                   // SizedBox(height: 20),
                   Obx(() {
-                    if (controller.isNewCustomer.value == true) {
+                    if (controller.isNewCustomer.isTrue) {
                       return TextFormField(
                         validator: (value) {
                           if (value!.isEmpty) {
@@ -189,7 +215,18 @@ class _ReceiptInputState extends State<ReceiptInput> {
                         keyboardType: TextInputType.number,
                       );
                     }
-                    return SizedBox();
+                    return TextFormField(
+                      readOnly: true,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Isi alamat customer!';
+                        }
+                        return null;
+                      },
+                      controller: controller.addressController,
+                      decoration: InputDecoration(labelText: 'Alamat'),
+                      keyboardType: TextInputType.number,
+                    );
                   }),
                   SizedBox(height: 10),
                   Obx(
@@ -198,13 +235,25 @@ class _ReceiptInputState extends State<ReceiptInput> {
                         if (controller.isNewItem.isTrue)
                           Expanded(
                             child: TextFormField(
-                              controller: controller.manualItemController,
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Isi nama barang!';
+                                }
+                                return null;
+                              },
+                              controller: controller.newItemNameController,
                               decoration: InputDecoration(labelText: 'Nama Barang Manual'),
                             ),
                           ),
                         if (controller.isNewItem.isFalse)
                           Expanded(
                             child: TextFormField(
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Isi nama barang!';
+                                }
+                                return null;
+                              },
                               onTap: () {
                                 showMaterialModalBottomSheet(
                                   context: context,
@@ -226,7 +275,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                                 controller.isNewItem.value = value;
                                 controller.itemId.value = 0;
                                 controller.itemController.clear();
-                                controller.manualItemController.clear();
+                                controller.newItemNameController.clear();
                               },
                               activeColor: kPrimary,
                             ),
@@ -250,31 +299,31 @@ class _ReceiptInputState extends State<ReceiptInput> {
                     controller: controller.itemConditionController,
                     decoration: InputDecoration(labelText: 'Kondisi Barang'),
                   ),
-                  SizedBox(height: 30),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: Checkbox(
-                          activeColor: Colors.black,
-                          value: checkValue,
-                          onChanged: (newValue) {
-                            setState(() {
-                              checkValue = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Text('Terima '),
-                      InkWell(
-                        onTap: () {},
-                        child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 30),
+                  SizedBox(height: 20),
+                  // Row(
+                  //   children: [
+                  //     SizedBox(
+                  //       width: 24,
+                  //       height: 24,
+                  //       child: Checkbox(
+                  //         activeColor: Colors.black,
+                  //         value: checkValue,
+                  //         onChanged: (newValue) {
+                  //           setState(() {
+                  //             checkValue = newValue!;
+                  //           });
+                  //         },
+                  //       ),
+                  //     ),
+                  //     SizedBox(width: 10),
+                  //     Text('Terima '),
+                  //     InkWell(
+                  //       onTap: () {},
+                  //       child: Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
+                  //     ),
+                  //   ],
+                  // ),
+                  // SizedBox(height: 30),
                   Row(
                     children: [
                       Expanded(
@@ -284,21 +333,24 @@ class _ReceiptInputState extends State<ReceiptInput> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           onPressed: () {
-                            if (_key.currentState!.validate() && checkValue == true) {
+                            if (_key.currentState!.validate()) {
                               controller.createOrder();
-                            } else if (_key.currentState!.validate() && checkValue == false) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text('Terima Syarat dan Ketentuan'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.red,
-                              ));
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text('Lengkapi data'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.red,
-                              ));
                             }
+                            // if (_key.currentState!.validate() && checkValue == true) {
+                            //   controller.createOrder();
+                            // } else if (_key.currentState!.validate() && checkValue == false) {
+                            //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            //     content: Text('Terima Syarat dan Ketentuan'),
+                            //     behavior: SnackBarBehavior.floating,
+                            //     backgroundColor: Colors.red,
+                            //   ));
+                            // } else {
+                            //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            //     content: Text('Lengkapi data'),
+                            //     behavior: SnackBarBehavior.floating,
+                            //     backgroundColor: Colors.red,
+                            //   ));
+                            // }
                           },
                           child: Text('Simpan'),
                         ),
@@ -438,7 +490,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                       if (controller.isNewItem.isTrue)
                         Expanded(
                           child: TextFormField(
-                            controller: controller.manualItemController,
+                            controller: controller.newItemNameController,
                             decoration: InputDecoration(labelText: 'Nama Barang Manual'),
                           ),
                         ),
@@ -461,7 +513,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                               controller.isNewItem.value = value;
                               controller.itemId.value = 0;
                               controller.itemController.clear();
-                              controller.manualItemController.clear();
+                              controller.newItemNameController.clear();
                             },
                             activeColor: kPrimary,
                           ),
@@ -614,7 +666,7 @@ class _ReceiptInputState extends State<ReceiptInput> {
                               },
                               contentPadding: EdgeInsets.zero,
                               title: Text(item.itemName!),
-                              subtitle: Text(item.itemAlias!),
+                              subtitle: item.itemAlias == null ? null : Text(item.itemAlias!),
                             );
                           },
                           separatorBuilder: (BuildContext context, int index) {
@@ -680,17 +732,28 @@ class _ReceiptInputState extends State<ReceiptInput> {
                     controller.customerList.value = snapshot.data!;
                     return Obx(
                       () {
-                        if (controller.customerList.isEmpty) return Center(child: Text('Barang tidak ditemukan'));
+                        if (controller.customerList.isEmpty) return Center(child: Text('Customer tidak ditemukan'));
                         return ListView.separated(
                           padding: EdgeInsets.zero,
                           itemCount: controller.customerList.length,
                           itemBuilder: (context, index) {
                             final customer = controller.customerList[index];
                             return ListTile(
-                              onTap: null,
+                              onTap: () {
+                                controller.customerId.value = customer.id!;
+                                controller.customerController.text = customer.name!;
+                                controller.phoneNumberController.text = '${customer.contact!}'.substring(0, 1) == '0'
+                                    ? '${customer.contact!}'
+                                    : '0${customer.contact!}';
+                                controller.addressController.text = customer.address!;
+                                Get.back();
+                              },
                               contentPadding: EdgeInsets.zero,
                               title: Text(customer.name!),
-                              subtitle: Text('${customer.contact!}'),
+                              subtitle: Text(customer.address!),
+                              trailing: Text('${customer.contact!}'.substring(0, 1) == '0'
+                                  ? '${customer.contact!}'
+                                  : '0${customer.contact!}'),
                             );
                           },
                           separatorBuilder: (BuildContext context, int index) {
