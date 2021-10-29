@@ -39,69 +39,27 @@ class _PaymentPageState extends State<PaymentPage> {
               elevation: 0,
               backgroundColor: Colors.white,
             ),
-      body: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TabBar(
-            controller: controller.tabController,
-            indicatorColor: kPrimary,
-            labelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
-            unselectedLabelStyle: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold),
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            tabs: tabList.map((e) => Tab(child: Text(e))).toList(),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: controller.tabController,
-              physics: NeverScrollableScrollPhysics(),
-              children: [
-                FutureBuilder<List<Order>>(
-                  future: APIService().getOrder(fromStatus: 0, toStatus: 0),
-                  builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                    if (snapshot.hasData) {
-                      if (Responsive.isMobile(context)) return PaymentList(order: snapshot.data);
-                      return Container(
-                        height: Get.height * .70,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        child: PaymentList(
-                          order: snapshot.data,
-                        ),
-                      );
-                    }
-                    return Center(child: CircularProgressIndicator());
-                  },
+      body: FutureBuilder(
+        future: APIService().getOrder(fromStatus: 0, toStatus: 0),
+        builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
+          if (snapshot.hasData) {
+            if(snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
+            if (Responsive.isMobile(context)) return PaymentList(order: snapshot.data!);
+            return Container(
+              height: Get.height * .70,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Colors.grey[300]!,
                 ),
-                FutureBuilder(
-                  future: APIService().getOrder(fromStatus: 0, toStatus: 0),
-                  builder: (BuildContext context, AsyncSnapshot<List<Order>> snapshot) {
-                    if (snapshot.hasData) {
-                      if (Responsive.isMobile(context)) return PaymentList(order: snapshot.data!);
-                      return Container(
-                        height: Get.height * .70,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        child: PaymentList(
-                          order: snapshot.data!,
-                        ),
-                      );
-                    }
-                    return Center(child: CircularProgressIndicator());
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+              child: PaymentList(
+                order: snapshot.data!,
+              ),
+            );
+          }
+          return Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }

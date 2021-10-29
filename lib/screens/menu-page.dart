@@ -88,7 +88,7 @@ class _MenuState extends State<Menu> {
               MenuCard(
                 cardTitle: 'Pembayaran',
                 menuList: [
-                  {'menu': 'Pembayaran', 'ontap': () => Get.to(() => ImagePage())},
+                  {'menu': 'Pembayaran', 'ontap': () => Get.to(() => PaymentPage())},
                 ],
               ),
           ],

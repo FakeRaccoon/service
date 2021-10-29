@@ -116,6 +116,7 @@ class APIService {
       final response = await dio.get(baseUrl + '/users/detail');
       return userFromJson(json.encode(response.data['result']));
     } on DioError catch (e) {
+      if (e.response!.statusCode == 403) throw 'invalid';
       throw e.message;
     }
   }

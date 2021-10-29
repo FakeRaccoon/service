@@ -27,6 +27,7 @@ class MenuCard extends StatelessWidget {
             ),
             SizedBox(height: 10),
             ListView.separated(
+              physics: NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemCount: menuList.length,
               itemBuilder: (context, index) => ListTile(

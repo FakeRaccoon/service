@@ -106,6 +106,7 @@ class _ServiceProposalState extends State<ServiceProposal> with TickerProviderSt
                     if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
                     return OrderList(status: 0, orders: snapshot.data!);
                   }
+                  if (snapshot.hasError) return Center(child: Text('Terjadi kesalahan, coba beberapa saat lagi'));
                   return Center(child: CircularProgressIndicator());
                 },
               ),
@@ -116,6 +117,7 @@ class _ServiceProposalState extends State<ServiceProposal> with TickerProviderSt
                     if (snapshot.data!.isEmpty) return Center(child: Text('Tidak ada data'));
                     return OrderList(status: 1, orders: snapshot.data!);
                   }
+                  if (snapshot.hasError) return Center(child: Text('Terjadi kesalahan, coba beberapa saat lagi'));
                   return Center(child: CircularProgressIndicator());
                 },
               ),
@@ -516,32 +518,32 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                                         style: GoogleFonts.sourceSansPro(fontWeight: FontWeight.bold)),
                                   ),
                                 SizedBox(height: 20),
-                                if(order.status != 6)
-                                Row(
-                                  children: [
-                                    SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: Checkbox(
-                                        splashRadius: 1,
-                                        activeColor: Colors.black,
-                                        value: checkValue,
-                                        onChanged: (newValue) {
-                                          setState(() {
-                                            checkValue = newValue!;
-                                          });
-                                        },
+                                if (order.status != 6)
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: Checkbox(
+                                          splashRadius: 1,
+                                          activeColor: Colors.black,
+                                          value: checkValue,
+                                          onChanged: (newValue) {
+                                            setState(() {
+                                              checkValue = newValue!;
+                                            });
+                                          },
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text('Telah Disetujui Customer', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    // InkWell(
-                                    //   onTap: () {},
-                                    //   child:
-                                    //       Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    // ),
-                                  ],
-                                ),
+                                      SizedBox(width: 10),
+                                      Text('Telah Disetujui Customer', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      // InkWell(
+                                      //   onTap: () {},
+                                      //   child:
+                                      //       Text('Syarat dan Ketentuan', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      // ),
+                                    ],
+                                  ),
                                 if (!Responsive.isMobile(context)) SizedBox(height: 30),
                                 if (!Responsive.isMobile(context))
                                   Align(
@@ -600,22 +602,62 @@ class _ServiceProposalDetailState extends State<ServiceProposalDetail> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 pdf.addPage(
-                                  pw.Page(
+                                  pw.MultiPage(
                                     pageFormat: PdfPageFormat.a4,
                                     build: (pw.Context context) {
-                                      return pw.Column(
-                                        children: [
-                                          pw.Text('Tanda Terima'),
-                                          pw.Text(order.customer!.name!),
-                                        ],
-                                      ); // Center
+                                      return <pw.Widget>[
+                                        pw.Center(
+                                          child: pw.Text(
+                                            'Tanda Terima',
+                                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18),
+                                          ),
+                                        ),
+                                        pw.SizedBox(height: 10 * PdfPageFormat.mm),
+                                        pw.Text(
+                                          'Terima Dari',
+                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                                        ),
+                                        pw.Text(
+                                          order.customer!.name!,
+                                          style: pw.TextStyle(fontSize: 16),
+                                        ),
+                                        pw.SizedBox(height: 5 * PdfPageFormat.mm),
+                                        pw.Text(
+                                          'Alamat',
+                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                                        ),
+                                        pw.Text(
+                                          order.customer!.address!,
+                                          style: pw.TextStyle(fontSize: 16),
+                                        ),
+                                        pw.SizedBox(height: 5 * PdfPageFormat.mm),
+                                        pw.Text(
+                                          'No Telfon',
+                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                                        ),
+                                        pw.Text(
+                                          '${order.customer!.contact!}'.substring(0, 1) == '0'
+                                              ? '${order.customer!.contact!}'
+                                              : '0${order.customer!.contact!}',
+                                          style: pw.TextStyle(fontSize: 16),
+                                        ),
+                                        pw.SizedBox(height: 5 * PdfPageFormat.mm),
+                                        pw.Text(
+                                          'Barang',
+                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                                        ),
+                                        pw.Text(
+                                          order.item!.itemName!,
+                                          style: pw.TextStyle(fontSize: 16),
+                                        ),
+                                      ]; // Center
                                     },
                                   ),
                                 );
-                                final path = await getApplicationDocumentsDirectory();
-                                final file = File('${path.path}/example.pdf');
+                                final path = await getTemporaryDirectory();
+                                final file = File('${path.path}/tanda-terima.pdf');
                                 await file.writeAsBytes(await pdf.save());
-                                OpenFile.open('${path.path}/example.pdf');
+                                OpenFile.open('${path.path}/tanda-terima.pdf');
                               },
                               child: Text('Cetak'),
                             ),

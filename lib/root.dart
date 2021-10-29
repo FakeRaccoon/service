@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:service/models/user-model.dart';
 import 'package:service/screens/home.dart';
@@ -19,7 +20,9 @@ class _RootState extends State<Root> {
         future: APIService().userDetail(),
         builder: (BuildContext context, AsyncSnapshot<User> snapshot) {
           if (snapshot.hasData) return Home(user: snapshot.data!);
-          if (snapshot.hasError) return ResponsiveLoginPage();
+          if (snapshot.hasError) {
+            if (snapshot.error == 'invalid') return ResponsiveLoginPage();
+          }
           return Center(child: CircularProgressIndicator());
         },
       ),

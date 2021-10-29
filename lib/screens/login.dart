@@ -4,12 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:service/controllers/login-controller.dart';
 import 'package:service/style.dart';
 
-class Login extends StatefulWidget {
+class LoginPage extends StatefulWidget {
   @override
-  _LoginState createState() => _LoginState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginState extends State<Login> {
+class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final controller = Get.put(LoginController());
 
